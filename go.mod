@@ -1,14 +1,11 @@
 module github.com/go-kratos/protoc-gen-typescript-http
 
-go 1.18
+go 1.25.6
 
 require (
-	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d
-	google.golang.org/protobuf v1.28.1
-	gotest.tools/v3 v3.4.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20260209200024-4cfbd4190f57
+	google.golang.org/protobuf v1.36.11
+	gotest.tools/v3 v3.5.2
 )
 
-require (
-	github.com/golang/protobuf v1.5.0 // indirect
-	github.com/google/go-cmp v0.5.5 // indirect
-)
+require github.com/google/go-cmp v0.7.0 // indirect
