@@ -3,20 +3,16 @@ all: build test
 
 .PHONY: build
 build:
-	go build ./...
+	mage build
 
 .PHONY: test
 test:
-	go test -v ./...
+	mage test
 
-.PHONY: proto
-proto:
-	mkdir -p bin
-	go build --trimpath -o bin/protoc-gen-typescript-http .
-	PATH=$(PWD)/bin:$$PATH $(MAKE) -C examples/proto -f Makefile generate
+.PHONY: integration
+integration:
+	mage integration
 
 .PHONY: clean
 clean:
-	go clean
-	rm -rf bin
-	$(MAKE) -C examples/proto clean
+	mage clean
