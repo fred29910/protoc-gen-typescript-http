@@ -15,7 +15,6 @@
   - `google.golang.org/protobuf`: 用于处理 Protobuf 反射和描述符。
   - `google.golang.org/genproto`: 提供 HTTP 规则定义。
 - **构建与任务自动化**:
-  - `sage`: Einride 提供的任务运行器。
   - `buf`: 用于管理和编译 Protobuf。
   - `Makefile`: 标准入口。
 

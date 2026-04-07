@@ -1,6 +1,6 @@
 module github.com/go-kratos/protoc-gen-typescript-http
 
-go 1.25.6
+go 1.25.7
 
 require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260209200024-4cfbd4190f57
