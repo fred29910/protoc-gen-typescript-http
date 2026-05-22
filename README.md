@@ -46,4 +46,27 @@ function fetchRequestHandler({path, method, body}: Request) {
 export function siteClient() {
   return createShipperServiceClient(fetchRequestHandler);
 }
+
+### Development
+
+We use [Mage](https://github.com/magefile/mage) to manage project tasks.
+
+#### Prerequisites
+
+- Go 1.25.7+
+- [buf](https://buf.build/docs/installation)
+- [mage](https://magefile.org/) (optional, can also be run via `go run github.com/magefile/mage`)
+
+#### Available Tasks
+
+- `mage build`: Builds the plugin binary to the `bin/` directory.
+- `mage test`: Runs unit tests.
+- `mage integration`: Runs integration tests (builds plugin, generates code in `examples/`, and verifies there are no changes).
+- `mage clean`: Cleans build artifacts.
+
+You can also use the traditional `Makefile` as a shortcut:
+- `make build`
+- `make test`
+- `make integration`
+- `make clean`
 ```
