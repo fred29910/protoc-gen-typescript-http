@@ -12,9 +12,14 @@
 .
 ├── main.go                    # Protoc plugin entry point
 ├── magefile.go                # Mage task definitions
-├── Makefile                   # Optional Makefile wrapper
+├── Makefile                   # Makefile wrapper with tool installation
 ├── go.mod / go.sum            # Go module dependencies
 ├── .goreleaser.yml            # GoReleaser configuration
+├── .eslintrc.js               # ESLint config for generated TypeScript
+├── AGENTS.md                  # AI agent configuration
+├── CODE_OF_CONDUCT.md         # Contributor code of conduct
+├── LICENSE                    # Project license
+├── .tools/                    # Locally installed build tools (buf, mage)
 ├── internal/
 │   ├── codegen/               # Simple code generation buffer
 │   │   └── file.go
@@ -29,10 +34,10 @@
 │   │   ├── messagegen.go      # Message type generation
 │   │   ├── enumgen.go         # Enum type generation
 │   │   ├── servicegen.go      # Service interface & client generation
-│   │   ├── commentgen.go      # Protobuf comment extraction
+│   │   ├── commentgen.go      # Protobuf comment & field behavior extraction
 │   │   ├── type.go            # Protobuf→TypeScript type mapping
-│   │   ├── wellknown.go       # Well-Known Type handling
-│   │   ├── jsonleafwalk.go    # JSON leaf field walker
+│   │   ├── wellknown.go       # Well-Known Type handling & type declarations
+│   │   ├── jsonleafwalk.go    # JSON leaf field walker for query params
 │   │   └── helpers.go         # Type naming & iteration utilities
 │   └── protowalk/             # Protobuf descriptor tree walker
 │       └── walk.go
@@ -43,30 +48,41 @@
 │   └── proto/                 # Example proto definitions and generated code
 │       ├── buf.gen.yaml       # Buf code generation config
 │       ├── buf.yaml           # Buf module config
-│       └── einride/example/   # Example protos
+│       ├── buf.lock           # Pinned buf dependency versions
+│       ├── .gitignore         # Ignores gen/typescript/
+│       ├── Makefile           # Example-specific lint/generate/format targets
+│       └── einride/example/   # Example protos (freight v1, syntax v1/v2)
 └── docs/                      # Documentation
     └── ...
 ```
 
 ## 可用任务
 
+### Mage 任务
+
 所有项目任务都由 [Mage](https://magefile.org/) 管理：
 
 | 命令 | 描述 |
 |---|---|
-| `mage build` | 构建插件二进制文件到 `bin/protoc-gen-typescript-http` |
+| `mage build` | 构建插件二进制文件到 `bin/protoc-gen-typescript-http`（带 `--trimpath`） |
 | `mage test` | 运行单元测试 |
-| `mage integration` | 运行集成测试（完整构建 + 代码生成 + 差异验证） |
-| `mage clean` | 清理构建产物 |
+| `mage integration` | 运行集成测试（构建插件 → buf generate → git diff 验证） |
+| `mage clean` | 清理构建产物（`go clean` + 删除 `bin/`） |
 
-或者使用 Makefile 包装器：
+### Makefile 任务
 
-```bash
-make build
-make test
-make integration
-make clean
-```
+Makefile 提供了 Mage 任务的包装器，并额外支持工具安装和 proto 相关操作：
+
+| 命令 | 描述 |
+|---|---|
+| `make build` | 安装 mage → 执行 `mage build` |
+| `make test` | 安装 mage → 执行 `mage test` |
+| `make integration` | 安装 buf + mage → 执行 `mage integration` |
+| `make lint` | 在 `examples/proto/` 上运行 `buf lint` |
+| `make generate` | 构建插件 → 在 `examples/proto/` 下运行 `buf generate` |
+| `make clean` | 删除 `.tools/`、`bin/`、`examples/proto/gen/typescript/` |
+
+Makefile 会自动在 `.tools/` 目录下安装所需的工具版本（buf、mage），无需全局安装。首次运行时会自动安装。您也可以通过 `make install-buf` 或 `make install-mage` 单独安装。这些工具被安装到 `.tools/buf/<version>/` 和 `.tools/mage/<version>/` 目录中。这些目录已在 `.gitignore` 中排除，不会提交到仓库。仅当您需要手动管理工具版本时，才需关注这些目录。通常情况下，直接运行 `make build` 等目标即可自动处理工具安装。
 
 ## 工作流
 
@@ -133,4 +149,4 @@ buf generate
 goreleaser release
 ```
 
-在禁用 CGO 的情况下，为 linux、windows 和 darwin (amd64) 构建。
+在禁用 CGO 的情况下，为 linux、windows 和 darwin 构建（默认架构包含 amd64 和 arm64）。

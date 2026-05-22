@@ -1,72 +1,197 @@
-protoc-gen-typescript-http
-==========================
+# protoc-gen-typescript-http
 
-Generates Typescript types and service clients from protobuf definitions annotated with [http rules](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto). The generated types follow the [canonical JSON encoding](https://developers.google.com/protocol-buffers/docs/proto3#json).
+一个 protoc 插件（也是 [buf](https://buf.build) 插件），用于从带有 [google.api.http](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto) 规则注解的 protobuf 定义中生成 TypeScript 类型和 HTTP 服务客户端。生成的类型遵循[规范 JSON 编码](https://developers.google.com/protocol-buffers/docs/proto3#json)。
 
-**Experimental**: This library is under active development and breaking changes to config files, APIs and generated code are expected between releases.
+为 [go-kratos](https://github.com/go-kratos/kratos) 构建并使用。
 
-Using the plugin
-----------------
+**实验性**：本库正在积极开发中，配置、API 和生成的代码在不同版本之间可能会有破坏性变更。
 
-For examples of correctly annotated protobuf defintions and the generated code, look at [examples](./examples).
+## 特性
 
-### Install the plugin
+- **TypeScript 类型生成**：Protobuf message → TypeScript `type` 别名，使用规范的 camelCase JSON 命名
+- **枚举生成**：Protobuf enum → TypeScript 字符串字面量联合类型
+- **服务接口**：类型安全的服务接口，带类型化的异步方法
+- **客户端工厂**：`create<Service>Client(handler)` 函数，处理以下逻辑：
+  - 从 `google.api.http` 注解中构建 URL 路径
+  - 路径变量校验（空值检查）
+  - 按 `body` 子句序列化请求体
+  - 为剩余字段构建查询参数
+  - 自定义动词支持（例如 `:customVerb`）
+- **HTTP 客户端无关**：通过 `RequestHandler` 抽象，生成的代码可与任何 HTTP 客户端配合使用
+- **Well-Known 类型支持**：为所有 Google Well-Known Types（Timestamp、Duration、FieldMask、Struct、Any 等）提供正确的 TypeScript 映射
+- **注释传播**：Protobuf 源码注释和字段行为注解会保留为 TypeScript 注释
+- **跨包引用**：跨包引用时，类型名称会使用扁平化的包前缀限定作用域
+
+## 使用插件
+
+查看 [examples/proto](./examples/proto) 目录，了解正确注解的 protobuf 定义及其生成的代码。
+
+### 安装插件
 
 ```bash
 go install github.com/go-kratos/protoc-gen-typescript-http@latest
 ```
 
-Or download a prebuilt binary from [releases](./releases).
+或者从 [releases 页面](https://github.com/go-kratos/protoc-gen-typescript-http/releases) 下载预编译的二进制文件。
 
-### Invocation
+### 通过 buf 调用（推荐）
 
-```bash
-protoc 
-  --typescript-http_out [OUTPUT DIR] \
-  [.proto files ...]
+将插件添加到 `buf.gen.yaml`：
+
+```yaml
+version: v1
+
+plugins:
+  - name: typescript-http
+    out: gen/typescript
 ```
 
----
+然后运行：
 
-The generated clients can be used with any HTTP client that returns a Promise containing JSON data.
+```bash
+buf generate
+```
+
+### 通过 protoc 调用
+
+```bash
+protoc \
+  --typescript-http_out=<OUTPUT DIR> \
+  <proto files>
+```
+
+## 生成输出
+
+每个 protobuf package 会生成一个 `index.ts` 文件。输出目录结构与 protobuf package 名称一致。
+
+### 示例输出
+
+给定一个带有 `google.api.http` 注解的 protobuf 服务：
+
+```protobuf
+service FreightService {
+  rpc GetShipper(GetShipperRequest) returns (Shipper) {
+    option (google.api.http) = {get: "/v1/{name=shippers/*}"};
+  }
+  rpc ListShippers(ListShippersRequest) returns (ListShippersResponse) {
+    option (google.api.http) = {get: "/v1/shippers"};
+  }
+}
+```
+
+插件会生成：
 
 ```typescript
-const rootUrl = "...";
+// Type-safe message types
+export type GetShipperRequest = {
+  name: string | undefined;
+};
 
-type Request = {
-  path: string,
-  method: string,
-  body: string | null
+export type Shipper = {
+  name: string | undefined;
+  displayName: string | undefined;
+};
+
+// Service interface with typed methods
+export interface FreightService {
+  GetShipper(request: GetShipperRequest): Promise<Shipper>;
+  ListShippers(request: ListShippersRequest): Promise<ListShippersResponse>;
 }
 
-function fetchRequestHandler({path, method, body}: Request) {
-  return fetch(rootUrl + path, {method, body}).then(response => response.json())
+// Client factory function
+export function createFreightServiceClient(
+  handler: RequestHandler
+): FreightService {
+  return {
+    GetShipper(request) {
+      if (!request.name) {
+        throw new Error("missing required field request.name");
+      }
+      const path = `v1/${request.name}`;
+      return handler({ path, method: "GET", body: null }, { service: "FreightService", method: "GetShipper" })
+        as Promise<Shipper>;
+    },
+    // ...
+  };
+}
+```
+
+### 使用生成的客户端
+
+生成的客户端通过 `RequestHandler` 抽象与任何 HTTP 客户端配合使用：
+
+```typescript
+import { createFreightServiceClient, type FreightService } from "./gen/typescript/einride/example/freight/v1";
+
+const rootUrl = "https://api.example.com";
+
+// 将任意 HTTP 客户端适配为 RequestHandler 接口
+function fetchHandler(request: { path: string; method: string; body: string | null }) {
+  return fetch(`${rootUrl}/${request.path}`, {
+    method: request.method,
+    body: request.body,
+  }).then((response) => response.json());
 }
 
-export function siteClient() {
-  return createShipperServiceClient(fetchRequestHandler);
-}
+const client: FreightService = createFreightServiceClient(fetchHandler);
 
-### Development
+// 完全类型安全的 API 调用
+const shipper = await client.GetShipper({ name: "shippers/abc123" });
+const list = await client.ListShippers({ pageSize: 10 });
+```
 
-We use [Mage](https://github.com/magefile/mage) to manage project tasks.
+## 生成代码结构
 
-#### Prerequisites
+| 生成阶段 | 说明 |
+|---|---|
+| **Header** | `// Code generated by protoc-gen-typescript-http. DO NOT EDIT.` + `@ts-nocheck` |
+| **类型** | Protobuf message → TypeScript type 别名，字段使用 camelCase |
+| **枚举** | Protobuf enum → TypeScript 字符串字面量联合类型 |
+| **服务接口** | `export interface ServiceName { method(request): Promise<response> }` |
+| **请求处理器类型** | `RequestHandler = (request: { path, method, body }, meta: { service, method }) => Promise<unknown>` |
+| **客户端工厂** | `export function createServiceNameClient(handler): ServiceName` |
+| **Well-Known 类型** | `google.protobuf.Timestamp`、`Duration`、`FieldMask` 等的 TypeScript 映射 |
+
+## 文档
+
+详细文档位于 [docs](./docs/) 目录：
+
+| 文档 | 说明 |
+|---|---|
+| [架构](./docs/architecture.md) | 系统架构概述 |
+| [HTTP 规则解析](./docs/http-rule-parsing.md) | 如何将 Google HTTP 注解解析为 URL 模板 |
+| [代码生成](./docs/code-generation.md) | 详细的 TypeScript 代码生成参考 |
+| [Protobuf 注解](./docs/protobuf-annotations.md) | 如何为 .proto 文件添加 HTTP 规则注解 |
+| [开发指南](./docs/development.md) | 环境搭建、构建、测试和贡献 |
+
+## 开发
+
+我们使用 [Mage](https://github.com/magefile/mage) 管理项目任务。
+
+### 前置依赖
 
 - Go 1.25.7+
 - [buf](https://buf.build/docs/installation)
-- [mage](https://magefile.org/) (optional, can also be run via `go run github.com/magefile/mage`)
+- [mage](https://magefile.org/)（可选，也可以通过 `go run github.com/magefile/mage` 运行）
 
-#### Available Tasks
+### 可用任务
 
-- `mage build`: Builds the plugin binary to the `bin/` directory.
-- `mage test`: Runs unit tests.
-- `mage integration`: Runs integration tests (builds plugin, generates code in `examples/`, and verifies there are no changes).
-- `mage clean`: Cleans build artifacts.
+- `mage build` — 构建插件二进制文件到 `bin/` 目录
+- `mage test` — 运行单元测试
+- `mage integration` — 运行集成测试（构建插件，在 `examples/proto/gen/typescript/` 中生成代码，并通过 `git diff` 校验无变更）
+- `mage clean` — 清理构建产物
 
-You can also use the traditional `Makefile` as a shortcut:
-- `make build`
-- `make test`
-- `make integration`
-- `make clean`
-```
+通过 [Makefile](./Makefile) 也可使用：
+
+| 命令 | 说明 |
+|---|---|
+| `make build` | 构建插件二进制文件 |
+| `make test` | 运行单元测试 |
+| `make integration` | 运行集成测试（自动安装 buf 和 mage） |
+| `make lint` | 使用 `buf lint` 检查 proto 文件 |
+| `make generate` | 构建插件并在 `examples/proto/gen/typescript/` 中重新生成 TypeScript |
+| `make clean` | 清理所有构建产物 |
+
+### 发布流程
+
+发布通过 [goreleaser](https://goreleaser.com) 自动化完成。配置见 [.goreleaser.yml](./.goreleaser.yml)，支持交叉编译 linux、windows 和 darwin 平台。

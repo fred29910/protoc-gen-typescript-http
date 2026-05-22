@@ -50,10 +50,10 @@ Verb     = ":" LITERAL
 | Pattern | Segments | Verb |
 |---------|----------|------|
 | `/v1/shippers` | `["v1", "shippers"]`（全为 literal） | 无 |
-| `/v1/{name=shippers/*}` | `["v1", variable(name → [*])]` | 无 |
-| `/v1/{parent=shippers/*}/sites` | `["v1", variable(parent → [*]), "sites"]` | 无 |
-| `/v1/{string}:path` | `["v1", variable(string)]` | `"path"` |
-| `/{name=shippers/*}/shipments/{shipment}` | `[variable(name → [*]), "shipments", variable(shipment)]` | 无 |
+| `/v1/{name=shippers/*}` | `["v1", variable(name → [shippers, *])]` | 无 |
+| `/v1/{parent=shippers/*}/sites` | `["v1", variable(parent → [shippers, *]), "sites"]` | 无 |
+| `/v1/{string}:path` | `["v1", variable(string → [*])]` | `"path"` |
+| `/{name=shippers/*}/shipments/{shipment}` | `[variable(name → [shippers, *]), "shipments", variable(shipment → [*])]` | 无 |
 
 ### Validation
 
