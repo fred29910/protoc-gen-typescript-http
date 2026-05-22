@@ -457,10 +457,10 @@ export function createFreightServiceClient(
       const path = `v1/shippers`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
-      if (request.pageSize) {
+      if (request.pageSize !== undefined && request.pageSize !== null) {
         queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
       }
-      if (request.pageToken) {
+      if (request.pageToken !== undefined && request.pageToken !== null) {
         queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
       }
       let uri = path;
@@ -500,7 +500,7 @@ export function createFreightServiceClient(
       const path = `v1/${request.shipper.name}`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.shipper ?? {});
       const queryParams: string[] = [];
-      if (request.updateMask) {
+      if (request.updateMask !== undefined && request.updateMask !== null) {
         queryParams.push(`updateMask=${encodeURIComponent(request.updateMask.toString())}`)
       }
       let uri = path;
@@ -563,10 +563,10 @@ export function createFreightServiceClient(
       const path = `v1/${request.parent}/sites`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
-      if (request.pageSize) {
+      if (request.pageSize !== undefined && request.pageSize !== null) {
         queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
       }
-      if (request.pageToken) {
+      if (request.pageToken !== undefined && request.pageToken !== null) {
         queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
       }
       let uri = path;
@@ -609,7 +609,7 @@ export function createFreightServiceClient(
       const path = `v1/${request.site.name}`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.site ?? {});
       const queryParams: string[] = [];
-      if (request.updateMask) {
+      if (request.updateMask !== undefined && request.updateMask !== null) {
         queryParams.push(`updateMask=${encodeURIComponent(request.updateMask.toString())}`)
       }
       let uri = path;
@@ -672,10 +672,10 @@ export function createFreightServiceClient(
       const path = `v1/${request.parent}/shipments`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
-      if (request.pageSize) {
+      if (request.pageSize !== undefined && request.pageSize !== null) {
         queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
       }
-      if (request.pageToken) {
+      if (request.pageToken !== undefined && request.pageToken !== null) {
         queryParams.push(`pageToken=${encodeURIComponent(request.pageToken.toString())}`)
       }
       let uri = path;
@@ -718,7 +718,7 @@ export function createFreightServiceClient(
       const path = `v1/${request.shipment.name}`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.shipment ?? {});
       const queryParams: string[] = [];
-      if (request.updateMask) {
+      if (request.updateMask !== undefined && request.updateMask !== null) {
         queryParams.push(`updateMask=${encodeURIComponent(request.updateMask.toString())}`)
       }
       let uri = path;

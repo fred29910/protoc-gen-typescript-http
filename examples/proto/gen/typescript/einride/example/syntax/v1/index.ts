@@ -315,15 +315,15 @@ export function createSyntaxServiceClient(
       const path = `v1`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
-      if (request.string) {
+      if (request.string !== undefined && request.string !== null) {
         queryParams.push(`string=${encodeURIComponent(request.string.toString())}`)
       }
-      if (request.repeatedString) {
+      if (request.repeatedString !== undefined && request.repeatedString !== null) {
         request.repeatedString.forEach((x) => {
           queryParams.push(`repeatedString=${encodeURIComponent(x.toString())}`)
         })
       }
-      if (request.nested?.string) {
+      if (request.nested?.string !== undefined && request.nested?.string !== null) {
         queryParams.push(`nested.string=${encodeURIComponent(request.nested.string.toString())}`)
       }
       let uri = path;
@@ -377,10 +377,10 @@ export function createSyntaxServiceClient(
       const path = `v1:body`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.nested ?? {});
       const queryParams: string[] = [];
-      if (request.string) {
+      if (request.string !== undefined && request.string !== null) {
         queryParams.push(`string=${encodeURIComponent(request.string.toString())}`)
       }
-      if (request.repeatedString) {
+      if (request.repeatedString !== undefined && request.repeatedString !== null) {
         request.repeatedString.forEach((x) => {
           queryParams.push(`repeatedString=${encodeURIComponent(x.toString())}`)
         })
@@ -405,12 +405,12 @@ export function createSyntaxServiceClient(
       const path = `v1/${request.string}:path`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
-      if (request.repeatedString) {
+      if (request.repeatedString !== undefined && request.repeatedString !== null) {
         request.repeatedString.forEach((x) => {
           queryParams.push(`repeatedString=${encodeURIComponent(x.toString())}`)
         })
       }
-      if (request.nested?.string) {
+      if (request.nested?.string !== undefined && request.nested?.string !== null) {
         queryParams.push(`nested.string=${encodeURIComponent(request.nested.string.toString())}`)
       }
       let uri = path;
@@ -433,7 +433,7 @@ export function createSyntaxServiceClient(
       const path = `v1/${request.string}:pathBody`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.nested ?? {});
       const queryParams: string[] = [];
-      if (request.repeatedString) {
+      if (request.repeatedString !== undefined && request.repeatedString !== null) {
         request.repeatedString.forEach((x) => {
           queryParams.push(`repeatedString=${encodeURIComponent(x.toString())}`)
         })
