@@ -1,20 +1,20 @@
-# Documentation
+# 文档
 
-> Protoc plugin that generates TypeScript types and HTTP service clients from protobuf definitions annotated with [google.api.http](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto) rules.
+> 从带有 [google.api.http](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto) 规则注解的 protobuf 定义中生成 TypeScript 类型和 HTTP 服务客户端的 Protoc 插件。
 
-## Contents
+## 目录
 
-| Document | Description |
+| 文档 | 描述 |
 |----------|-------------|
-| [Architecture](./architecture.md) | System architecture overview — how the internal packages work together |
-| [HTTP Rule Parsing](./http-rule-parsing.md) | How Google HTTP annotations are parsed into URL templates |
-| [Code Generation](./code-generation.md) | TypeScript code generation — types, enums, messages, services |
-| [Protobuf Annotations](./protobuf-annotations.md) | Guide to annotating .proto files with HTTP rules and field behaviors |
-| [Development](./development.md) | Setup, build, test, and contribute |
-| [Examples](./examples.md) | Walkthrough of example proto definitions and generated output |
+| [Architecture](./architecture.md) | 系统架构概述，介绍内部包如何协同工作 |
+| [HTTP Rule Parsing](./http-rule-parsing.md) | 介绍如何将 Google HTTP 注解解析为 URL 模板 |
+| [Code Generation](./code-generation.md) | TypeScript 代码生成，包括类型、枚举、消息和服务 |
+| [Protobuf Annotations](./protobuf-annotations.md) | 使用 HTTP 规则和字段行为注解 .proto 文件的指南 |
+| [Development](./development.md) | 环境搭建、构建、测试和贡献指南 |
+| [Examples](./examples.md) | 示例 proto 定义及生成输出的完整演示 |
 
-## Quick links
+## 快速链接
 
-- **Source**: [github.com/go-kratos/protoc-gen-typescript-http](https://github.com/go-kratos/protoc-gen-typescript-http)
+- **源码**: [github.com/go-kratos/protoc-gen-typescript-http](https://github.com/go-kratos/protoc-gen-typescript-http)
 - **README**: [../README.md](../README.md)
-- **Examples**: [../examples/proto](../examples/proto)
+- **示例**: [../examples/proto](../examples/proto)

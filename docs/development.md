@@ -1,57 +1,65 @@
-# Development
+# 开发指南
 
-## Prerequisites
+## 前提条件
 
 - **Go** 1.25.7+
-- **[buf](https://buf.build/docs/installation)** — for building and linting example protos
-- **[mage](https://magefile.org/)** — task runner (optional, can be run via `go run github.com/magefile/mage`)
+- **[buf](https://buf.build/docs/installation)**，用于构建和校验示例 proto 文件
+- **[mage](https://magefile.org/)**，任务运行器（可选，可通过 `go run github.com/magefile/mage` 运行）
 
-## Project structure
+## 项目结构
 
 ```
 .
 ├── main.go                    # Protoc plugin entry point
+├── magefile.go                # Mage task definitions
+├── Makefile                   # Optional Makefile wrapper
+├── go.mod / go.sum            # Go module dependencies
+├── .goreleaser.yml            # GoReleaser configuration
 ├── internal/
 │   ├── codegen/               # Simple code generation buffer
 │   │   └── file.go
 │   ├── httprule/              # HTTP annotation parser
 │   │   ├── rule.go
 │   │   ├── template.go
-│   │   ├── fieldpath.go
-│   │   └── template_test.go
+│   │   ├── template_test.go   # Parser unit tests
+│   │   └── fieldpath.go
 │   ├── plugin/                # Core generation engine
-│   │   ├── generate.go
-│   │   ├── packagegen.go
-│   │   ├── messagegen.go
-│   │   ├── enumgen.go
-│   │   ├── servicegen.go
-│   │   ├── commentgen.go
-│   │   ├── type.go
-│   │   ├── wellknown.go
-│   │   ├── jsonleafwalk.go
-│   │   └── helpers.go
-│   └── protowalk/             # Protobuf descriptor walker
+│   │   ├── generate.go        # Main generation orchestrator
+│   │   ├── packagegen.go      # Package-level dispatcher
+│   │   ├── messagegen.go      # Message type generation
+│   │   ├── enumgen.go         # Enum type generation
+│   │   ├── servicegen.go      # Service interface & client generation
+│   │   ├── commentgen.go      # Protobuf comment extraction
+│   │   ├── type.go            # Protobuf→TypeScript type mapping
+│   │   ├── wellknown.go       # Well-Known Type handling
+│   │   ├── jsonleafwalk.go    # JSON leaf field walker
+│   │   └── helpers.go         # Type naming & iteration utilities
+│   └── protowalk/             # Protobuf descriptor tree walker
 │       └── walk.go
 ├── tests/
 │   └── integration/           # Integration tests (build tag: integration)
+│       └── integration_test.go
 ├── examples/
 │   └── proto/                 # Example proto definitions and generated code
-├── magefile.go                # Mage task definitions
-└── Makefile                   # Optional Makefile wrapper
+│       ├── buf.gen.yaml       # Buf code generation config
+│       ├── buf.yaml           # Buf module config
+│       └── einride/example/   # Example protos
+└── docs/                      # Documentation
+    └── ...
 ```
 
-## Available tasks
+## 可用任务
 
-All project tasks are managed by [Mage](https://magefile.org/):
+所有项目任务都由 [Mage](https://magefile.org/) 管理：
 
-| Command | Description |
+| 命令 | 描述 |
 |---|---|
-| `mage build` | Build the plugin binary to `bin/protoc-gen-typescript-http` |
-| `mage test` | Run unit tests |
-| `mage integration` | Run integration tests (full build + code generation + diff verification) |
-| `mage clean` | Clean build artifacts |
+| `mage build` | 构建插件二进制文件到 `bin/protoc-gen-typescript-http` |
+| `mage test` | 运行单元测试 |
+| `mage integration` | 运行集成测试（完整构建 + 代码生成 + 差异验证） |
+| `mage clean` | 清理构建产物 |
 
-Or using the Makefile wrapper:
+或者使用 Makefile 包装器：
 
 ```bash
 make build
@@ -60,65 +68,69 @@ make integration
 make clean
 ```
 
-## Workflow
+## 工作流
 
-### Building
+### 构建
 
 ```bash
 mage build
 ```
 
-The binary is output to `bin/protoc-gen-typescript-http`.
+二进制文件会输出到 `bin/protoc-gen-typescript-http`。
 
-### Running unit tests
+### 运行单元测试
 
 ```bash
 mage test
 ```
 
-### Running integration tests
+### 运行集成测试
 
-Integration tests:
-1. Build the plugin binary
-2. Run `buf generate` in `examples/proto/` using the built plugin
-3. Verify generated code matches committed code via `git diff --exit-code`
+集成测试步骤：
+1. 构建插件二进制文件
+2. 使用构建好的插件在 `examples/proto/` 中运行 `buf generate`
+3. 通过 `git diff --exit-code` 验证生成的代码与已提交的代码一致
 
 ```bash
 mage integration
 ```
 
-### Using the plugin directly
+### 直接使用插件
 
 ```bash
-protoc --typescript-http_out=./output --proto_path=./protos ./protos/*.proto
+protoc \
+  --typescript-http_out=./output \
+  --proto_path=./protos \
+  ./protos/*.proto
 ```
 
-Or with buf:
+或者使用 buf：
 
 ```bash
 cd examples/proto
 buf generate
 ```
 
-### Adding new examples
+### 添加新示例
 
-1. Add your `.proto` files under `examples/proto/`
-2. Generate TypeScript code: `buf generate` (from `examples/proto/`)
-3. Commit both `.proto` and generated `.ts` files
+1. 在 `examples/proto/` 下添加你的 `.proto` 文件
+2. 生成 TypeScript 代码：在 `examples/proto/` 目录下运行 `buf generate`
+3. 验证生成的输出：`git diff --exit-code examples/proto/gen/typescript`
+4. 提交 `.proto` 文件和生成的 `.ts` 文件
 
-## Code conventions
+## 代码规范
 
-- Standard Go formatting (`gofmt`)
-- Protobuf follows [Google AIP](https://google.aip.dev/) conventions in examples
-- Generated TypeScript uses `@ts-nocheck` and `eslint-disable camelcase` to avoid warnings on proto-idiomatic naming
-- Error handling uses `fmt.Errorf("context: %w", err)` for proper error wrapping
+- **Go**：标准的 `gofmt` 格式化，使用 `fmt.Errorf("context: %w", err)` 进行错误包装
+- **Protobuf**：在示例中遵循 [Google AIP](https://google.aip.dev/) 规范
+- **生成的 TypeScript**：使用 `@ts-nocheck` 和 `eslint-disable camelcase` 来抑制 proto 命名风格带来的警告
+- **测试**：通过标准的 `go test` 进行单元测试，通过构建标签 `//go:build integration` 进行集成测试
 
-## Release process
+## 发布流程
 
-Releases are automated via [GoReleaser](https://goreleaser.com/) configuration in `.goreleaser.yml`:
+发布流程通过 `.goreleaser.yml` 中的 [GoReleaser](https://goreleaser.com/) 配置实现自动化：
 
 ```bash
 goreleaser release
 ```
 
-Builds for linux, windows, and darwin (amd64) with CGO disabled.
+在禁用 CGO 的情况下，为 linux、windows 和 darwin (amd64) 构建。
