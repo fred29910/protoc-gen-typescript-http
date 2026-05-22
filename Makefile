@@ -18,11 +18,7 @@ install-buf: $(BUF_DIR)/buf
 $(BUF_DIR)/buf:
 	@echo "Installing buf $(BUF_VERSION)..."
 	@mkdir -p $(BUF_DIR) && \
-	UNAME_OS=$$(uname -s | tr '[:upper:]' '[:lower:]') && \
-	UNAME_ARCH=$$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') && \
-	curl -fsSL "https://github.com/bufbuild/buf/releases/download/$(BUF_VERSION)/buf-$${UNAME_OS}-$${UNAME_ARCH}.tar.gz" | \
-	  tar -xz -C $(BUF_DIR) --strip-components=1 buf && \
-	chmod +x $(BUF_DIR)/buf
+	GOBIN=$(BUF_DIR) go install github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
 
 .PHONY: install-mage
 install-mage: $(MAGE_DIR)/mage
@@ -53,8 +49,8 @@ lint: install-buf
 	cd examples/proto && PATH=$(BUF_DIR):$$PATH buf lint
 
 .PHONY: generate
-generate: install-buf
-	cd examples/proto && PATH=$(BUF_DIR):$$PATH buf generate
+generate: build
+	cd examples/proto && PATH=$(abspath bin):$(BUF_DIR):$$PATH buf generate
 
 # === Clean ===
 
