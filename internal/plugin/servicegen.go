@@ -220,6 +220,22 @@ func supportedMethod(method protoreflect.MethodDescriptor) bool {
 	return ok && !method.IsStreamingClient() && !method.IsStreamingServer()
 }
 
+// queryPresenceExpr generates a TypeScript nullish check expression for a query field.
+// Returns something like "request.pageSize !== undefined && request.pageSize !== null".
+// For nested fields, uses optional chaining: "request.nested?.string !== undefined && request.nested?.string !== null".
+func queryPresenceExpr(path httprule.FieldPath, message protoreflect.MessageDescriptor) string {
+	np := nullPropagationPath(path, message)
+	return fmt.Sprintf("request.%s !== undefined && request.%s !== null", np, np)
+}
+
+// queryValueExpr generates a TypeScript value access expression for a query field.
+// Returns something like "request.pageSize" for direct access.
+// For nested fields, uses direct dot access: "request.nested.string".
+func queryValueExpr(path httprule.FieldPath, message protoreflect.MessageDescriptor) string {
+	jp := jsonPath(path, message)
+	return "request." + jp
+}
+
 func jsonPath(path httprule.FieldPath, message protoreflect.MessageDescriptor) string {
 	return strings.Join(jsonPathSegments(path, message), ".")
 }
