@@ -51,7 +51,7 @@ export type GetShipperRequest = {
   // Format: shippers/{shipper}
   //
   // Behaviors: REQUIRED
-  name?: string;
+  name: string | undefined;
 };
 ```
 
