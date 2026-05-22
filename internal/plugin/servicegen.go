@@ -196,9 +196,9 @@ func (s serviceGenerator) generateMethodQuery(
 		if rule.Body != "" && path[0] == rule.Body {
 			return
 		}
-		nullPath := nullPropagationPath(path, input)
+		presenceExpr := queryPresenceExpr(path, input)
 		jp := jsonPath(path, input)
-		f.P(t(3), "if (request.", nullPath, ") {")
+		f.P(t(3), "if (", presenceExpr, ") {")
 		switch {
 		case field.IsList():
 			f.P(t(4), "request.", jp, ".forEach((x) => {")
