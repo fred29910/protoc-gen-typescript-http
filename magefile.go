@@ -20,7 +20,7 @@ func Build() error {
 	if err := os.MkdirAll("bin", 0755); err != nil {
 		return err
 	}
-	return sh.Run("go", "build", "-o", filepath.Join("bin", "protoc-gen-typescript-http"), ".")
+	return sh.Run("go", "build", "--trimpath", "-o", filepath.Join("bin", "protoc-gen-typescript-http"), ".")
 }
 
 // Test runs the unit tests.
@@ -34,13 +34,13 @@ func Test() error {
 func Integration() error {
 	mg.Deps(Build)
 	fmt.Println("Running integration tests...")
-	
+
 	// Add current bin to PATH
 	binDir, err := filepath.Abs("bin")
 	if err != nil {
 		return err
 	}
-	
+
 	oldPath := os.Getenv("PATH")
 	os.Setenv("PATH", binDir+string(os.PathListSeparator)+oldPath)
 	defer os.Setenv("PATH", oldPath)
