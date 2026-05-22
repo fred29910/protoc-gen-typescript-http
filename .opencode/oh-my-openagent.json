@@ -1,0 +1,563 @@
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
+  "agents": {
+    "atlas": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/claude-sonnet-4.6"
+        },
+        {
+          "model": "opencode/claude-sonnet-4-6"
+        },
+        {
+          "model": "openai/gpt-5.5",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "medium"
+        }
+      ],
+      "model": "anthropic/claude-sonnet-4-6"
+    },
+    "document-writer": {
+      "model": "google/antigravity-gemini-3-flash"
+    },
+    "explore": {
+      "fallback_models": [
+        {
+          "model": "anthropic/claude-haiku-4-5"
+        },
+        {
+          "model": "opencode/claude-haiku-4-5"
+        },
+        {
+          "model": "openai/gpt-5.4-nano"
+        },
+        {
+          "model": "opencode/gpt-5.4-nano"
+        }
+      ],
+      "model": "google/antigravity-gemini-3-flash"
+    },
+    "frontend-ui-ux-engineer": {
+      "model": "google/antigravity-gemini-3-pro-high"
+    },
+    "hephaestus": {
+       "fallback_models": [
+         {
+           "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+           "variant": "medium"
+         },
+         {
+           "model": "opencode/deepseek-v4-flash-free",
+           "variant": "medium"
+         },
+         {
+           "model": "opencode/nemotron-3-super-free",
+           "variant": "medium"
+         }
+       ],
+      "model": "openrouter/openrouter/owl-alpha",
+      "variant": "medium"
+    },
+    "librarian": {
+      "fallback_models": [
+        {
+          "model": "anthropic/claude-haiku-4-5"
+        },
+        {
+          "model": "opencode/claude-haiku-4-5"
+        },
+        {
+          "model": "openai/gpt-5.4-nano"
+        },
+        {
+          "model": "opencode/gpt-5.4-nano"
+        }
+      ],
+      "model": "opencode/glm-4.7-free"
+    },
+    "metis": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/claude-sonnet-4.6"
+        },
+        {
+          "model": "opencode/claude-sonnet-4-6"
+        },
+        {
+          "model": "anthropic/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "openai/gpt-5.5",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "high"
+        }
+      ],
+      "model": "anthropic/claude-sonnet-4-6"
+    },
+    "momus": {
+      "fallback_models": [
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "xhigh"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "xhigh"
+        },
+        {
+          "model": "anthropic/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "google/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "github-copilot/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/gemini-3.1-pro",
+          "variant": "high"
+        }
+      ],
+      "model": "openai/gpt-5.5",
+      "variant": "xhigh"
+    },
+    "multimodal-looker": {
+      "fallback_models": [
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "medium"
+        },
+        {
+          "model": "openai/gpt-5-nano"
+        },
+        {
+          "model": "github-copilot/gpt-5-nano"
+        },
+        {
+          "model": "opencode/gpt-5-nano"
+        }
+      ],
+      "model": "google/antigravity-gemini-3-flash",
+      "variant": "medium"
+    },
+    "oracle": {
+      "fallback_models": [
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "high"
+        },
+        {
+          "model": "google/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "github-copilot/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/gemini-3.1-pro",
+          "variant": "high"
+        },
+        {
+          "model": "anthropic/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        }
+      ],
+      "model": "anthropic/claude-opus-4-7",
+      "variant": "high"
+    },
+    "prometheus": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "openai/gpt-5.5",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "high"
+        },
+        {
+          "model": "google/gemini-3.1-pro-preview"
+        },
+        {
+          "model": "github-copilot/gemini-3.1-pro-preview"
+        },
+        {
+          "model": "opencode/gemini-3.1-pro"
+        }
+      ],
+      "model": "anthropic/claude-opus-4-7",
+      "variant": "max"
+    },
+    "sisyphus": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/kimi-k2.5"
+        },
+        {
+          "model": "openai/gpt-5.5",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free"
+        },
+        {
+          "model": "opencode/big-pickle"
+        }
+      ],
+      "model": "opencode/deepseek-v4-flash-free",
+      "variant": "max"
+    },
+    "sisyphus-junior": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/claude-sonnet-4.6"
+        },
+        {
+          "model": "opencode/claude-sonnet-4-6"
+        },
+        {
+          "model": "openai/gpt-5.5",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/big-pickle"
+        }
+      ],
+      "model": "anthropic/claude-sonnet-4-6"
+    }
+  },
+  "categories": {
+    "artistry": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/gemini-3.1-pro",
+          "variant": "high"
+        },
+        {
+          "model": "anthropic/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "openai/gpt-5.5"
+        },
+        {
+          "model": "opencode/deepseek-v4-flash-free"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free"
+        }
+      ],
+      "model": "google/gemini-3.1-pro-preview",
+      "variant": "high"
+    },
+    "deep": {
+      "fallback_models": [
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "medium"
+        },
+        {
+          "model": "anthropic/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "google/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "github-copilot/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/gemini-3.1-pro",
+          "variant": "high"
+        }
+      ],
+      "model": "openai/gpt-5.5",
+      "variant": "medium"
+    },
+    "quick": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/gpt-5.4-mini"
+        },
+        {
+          "model": "opencode/gpt-5.4-mini"
+        },
+        {
+          "model": "anthropic/claude-haiku-4-5"
+        },
+        {
+          "model": "github-copilot/claude-haiku-4.5"
+        },
+        {
+          "model": "opencode/claude-haiku-4-5"
+        },
+        {
+          "model": "google/gemini-3-flash-preview"
+        },
+        {
+          "model": "github-copilot/gemini-3-flash-preview"
+        },
+        {
+          "model": "opencode/gemini-3-flash"
+        },
+        {
+          "model": "opencode/gpt-5-nano"
+        }
+      ],
+      "model": "openai/gpt-5.4-mini"
+    },
+    "ultrabrain": {
+      "fallback_models": [
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "xhigh"
+        },
+        {
+          "model": "google/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "github-copilot/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/gemini-3.1-pro",
+          "variant": "high"
+        },
+        {
+          "model": "anthropic/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        }
+      ],
+      "model": "openai/gpt-5.5",
+      "variant": "xhigh"
+    },
+    "unspecified-high": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "openai/gpt-5.5",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/deepseek-v4-flash-free",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/nemotron-3-super-free",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/glm-5"
+        },
+        {
+          "model": "opencode/kimi-k2.5"
+        }
+      ],
+      "model": "anthropic/claude-opus-4-7",
+      "variant": "max"
+    },
+    "unspecified-low": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/claude-sonnet-4.6"
+        },
+        {
+          "model": "opencode/claude-sonnet-4-6"
+        },
+        {
+          "model": "openai/gpt-5.3-codex",
+          "variant": "medium"
+        },
+        {
+          "model": "opencode/gpt-5.3-codex",
+          "variant": "medium"
+        },
+        {
+          "model": "google/gemini-3-flash-preview"
+        },
+        {
+          "model": "github-copilot/gemini-3-flash-preview"
+        },
+        {
+          "model": "opencode/gemini-3-flash"
+        }
+      ],
+      "model": "anthropic/claude-sonnet-4-6"
+    },
+    "visual-engineering": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/gemini-3.1-pro-preview",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/gemini-3.1-pro",
+          "variant": "high"
+        },
+        {
+          "model": "opencode/glm-5"
+        },
+        {
+          "model": "anthropic/claude-opus-4-7",
+          "variant": "max"
+        },
+        {
+          "model": "github-copilot/claude-opus-4.7",
+          "variant": "max"
+        },
+        {
+          "model": "opencode/claude-opus-4-7",
+          "variant": "max"
+        }
+      ],
+      "model": "google/gemini-3.1-pro-preview",
+      "variant": "high"
+    },
+    "writing": {
+      "fallback_models": [
+        {
+          "model": "github-copilot/gemini-3-flash-preview"
+        },
+        {
+          "model": "opencode/gemini-3-flash"
+        },
+        {
+          "model": "anthropic/claude-sonnet-4-6"
+        },
+        {
+          "model": "github-copilot/claude-sonnet-4.6"
+        },
+        {
+          "model": "opencode/claude-sonnet-4-6"
+        }
+      ],
+      "model": "google/gemini-3-flash-preview"
+    }
+  },
+  "google_auth": false
+}
