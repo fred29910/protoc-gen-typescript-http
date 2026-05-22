@@ -2,3 +2,6 @@
 bin
 .semrel
 .generated-go-semantic-release-changelog.md
+
+.agents
+.sisyphus/
