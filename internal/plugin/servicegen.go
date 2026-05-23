@@ -157,7 +157,16 @@ func (s serviceGenerator) generateMethodPath(
 			if err != nil {
 				return fmt.Errorf("method path json path: %w", err)
 			}
-			pathParts = append(pathParts, "${request."+fieldPath+"}")
+			if isWildcardVariable(seg) {
+				// Preserve structural slashes — split, encode each segment, join
+				// e.g., request.name.split('/').map(p => encodeURIComponent(p)).join('/')
+				pathParts = append(pathParts,
+					"${request."+fieldPath+".split('/').map(p => encodeURIComponent(p)).join('/')}")
+			} else {
+				// Standard variable — full encodeURIComponent
+				pathParts = append(pathParts,
+					"${encodeURIComponent(request."+fieldPath+")}")
+			}
 		case httprule.SegmentKindLiteral:
 			pathParts = append(pathParts, seg.Literal)
 		case httprule.SegmentKindMatchSingle: // TODO: Double check this and following case
@@ -250,6 +259,20 @@ func (s serviceGenerator) generateMethodQuery(
 		f.P(t(3), "}")
 	})
 	return queryErr
+}
+
+// isWildcardVariable returns true if the variable segment uses a sub-template
+// pattern (e.g., {name=shippers/*} or {name=**}), which means slashes within
+// the value are semantically significant and must be preserved.
+func isWildcardVariable(seg httprule.Segment) bool {
+	if seg.Kind != httprule.SegmentKindVariable {
+		return false
+	}
+	// If the variable has only a single * segment, it's a standard variable
+	if len(seg.Variable.Segments) == 1 && seg.Variable.Segments[0].Kind == httprule.SegmentKindMatchSingle {
+		return false // simple {id} — no sub-template
+	}
+	return true // has sub-template like {name=shippers/*} or {name=**}
 }
 
 func supportedMethod(method protoreflect.MethodDescriptor) bool {
