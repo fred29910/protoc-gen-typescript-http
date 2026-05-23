@@ -90,10 +90,18 @@ func (s serviceGenerator) generateMethod(f *codegen.File, method protoreflect.Me
 		return fmt.Errorf("parse http rule: %w", err)
 	}
 	f.P(t(2), method.Name(), "(request) { // eslint-disable-line @typescript-eslint/no-unused-vars")
-	s.generateMethodPathValidation(f, method.Input(), rule)
-	s.generateMethodPath(f, method.Input(), rule)
-	s.generateMethodBody(f, method.Input(), rule)
-	s.generateMethodQuery(f, method.Input(), rule)
+	if err := s.generateMethodPathValidation(f, method.Input(), rule); err != nil {
+		return fmt.Errorf("path validation: %w", err)
+	}
+	if err := s.generateMethodPath(f, method.Input(), rule); err != nil {
+		return fmt.Errorf("path: %w", err)
+	}
+	if err := s.generateMethodBody(f, method.Input(), rule); err != nil {
+		return fmt.Errorf("body: %w", err)
+	}
+	if err := s.generateMethodQuery(f, method.Input(), rule); err != nil {
+		return fmt.Errorf("query: %w", err)
+	}
 	f.P(t(3), "let uri = path;")
 	f.P(t(3), "if (queryParams.length > 0) {")
 	f.P(t(4), "uri += `?${queryParams.join(\"&\")}`")
@@ -114,31 +122,38 @@ func (s serviceGenerator) generateMethodPathValidation(
 	f *codegen.File,
 	input protoreflect.MessageDescriptor,
 	rule httprule.Rule,
-) {
+) error {
 	for _, seg := range rule.Template.Segments {
 		if seg.Kind != httprule.SegmentKindVariable {
 			continue
 		}
 		fp := seg.Variable.FieldPath
-		nullPath := nullPropagationPath(fp, input)
+		nullPath, err := nullPropagationPath(fp, input)
+		if err != nil {
+			return fmt.Errorf("path validation null propagation: %w", err)
+		}
 		protoPath := strings.Join(fp, ".")
 		errMsg := "missing required field request." + protoPath
 		f.P(t(3), "if (!request.", nullPath, ") {")
 		f.P(t(4), "throw new Error(", strconv.Quote(errMsg), ");")
 		f.P(t(3), "}")
 	}
+	return nil
 }
 
 func (s serviceGenerator) generateMethodPath(
 	f *codegen.File,
 	input protoreflect.MessageDescriptor,
 	rule httprule.Rule,
-) {
+) error {
 	pathParts := make([]string, 0, len(rule.Template.Segments))
 	for _, seg := range rule.Template.Segments {
 		switch seg.Kind {
 		case httprule.SegmentKindVariable:
-			fieldPath := jsonPath(seg.Variable.FieldPath, input)
+			fieldPath, err := jsonPath(seg.Variable.FieldPath, input)
+			if err != nil {
+				return fmt.Errorf("method path json path: %w", err)
+			}
 			pathParts = append(pathParts, "${request."+fieldPath+"}")
 		case httprule.SegmentKindLiteral:
 			pathParts = append(pathParts, seg.Literal)
@@ -153,33 +168,38 @@ func (s serviceGenerator) generateMethodPath(
 		path += ":" + rule.Template.Verb
 	}
 	f.P(t(3), "const path = `", path, "`; // eslint-disable-line quotes")
+	return nil
 }
 
 func (s serviceGenerator) generateMethodBody(
 	f *codegen.File,
 	input protoreflect.MessageDescriptor,
 	rule httprule.Rule,
-) {
+) error {
 	switch {
 	case rule.Body == "":
 		f.P(t(3), "const body = null;")
 	case rule.Body == "*":
 		f.P(t(3), "const body = JSON.stringify(request);")
 	default:
-		nullPath := nullPropagationPath(httprule.FieldPath{rule.Body}, input)
+		nullPath, err := nullPropagationPath(httprule.FieldPath{rule.Body}, input)
+		if err != nil {
+			return fmt.Errorf("method body null propagation: %w", err)
+		}
 		f.P(t(3), "const body = JSON.stringify(request?.", nullPath, " ?? {});")
 	}
+	return nil
 }
 
 func (s serviceGenerator) generateMethodQuery(
 	f *codegen.File,
 	input protoreflect.MessageDescriptor,
 	rule httprule.Rule,
-) {
+) error {
 	f.P(t(3), "const queryParams: string[] = [];")
 	// nothing in query
 	if rule.Body == "*" {
-		return
+		return nil
 	}
 	// fields covered by path
 	pathCovered := make(map[string]struct{})
@@ -189,15 +209,27 @@ func (s serviceGenerator) generateMethodQuery(
 		}
 		pathCovered[segment.Variable.FieldPath.String()] = struct{}{}
 	}
+	var queryErr error
 	walkJSONLeafFields(input, func(path httprule.FieldPath, field protoreflect.FieldDescriptor) {
+		if queryErr != nil {
+			return
+		}
 		if _, ok := pathCovered[path.String()]; ok {
 			return
 		}
 		if rule.Body != "" && path[0] == rule.Body {
 			return
 		}
-		presenceExpr := queryPresenceExpr(path, input)
-		jp := jsonPath(path, input)
+		presenceExpr, err := queryPresenceExpr(path, input)
+		if err != nil {
+			queryErr = fmt.Errorf("query presence expr: %w", err)
+			return
+		}
+		jp, err := jsonPath(path, input)
+		if err != nil {
+			queryErr = fmt.Errorf("query json path: %w", err)
+			return
+		}
 		f.P(t(3), "if (", presenceExpr, ") {")
 		switch {
 		case field.IsList():
@@ -213,6 +245,7 @@ func (s serviceGenerator) generateMethodQuery(
 		}
 		f.P(t(3), "}")
 	})
+	return queryErr
 }
 
 func supportedMethod(method protoreflect.MethodDescriptor) bool {
@@ -223,35 +256,52 @@ func supportedMethod(method protoreflect.MethodDescriptor) bool {
 // queryPresenceExpr generates a TypeScript nullish check expression for a query field.
 // Returns something like "request.pageSize !== undefined && request.pageSize !== null".
 // For nested fields, uses optional chaining: "request.nested?.string !== undefined && request.nested?.string !== null".
-func queryPresenceExpr(path httprule.FieldPath, message protoreflect.MessageDescriptor) string {
-	np := nullPropagationPath(path, message)
-	return fmt.Sprintf("request.%s !== undefined && request.%s !== null", np, np)
+func queryPresenceExpr(path httprule.FieldPath, message protoreflect.MessageDescriptor) (string, error) {
+	np, err := nullPropagationPath(path, message)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("request.%s !== undefined && request.%s !== null", np, np), nil
 }
 
 // queryValueExpr generates a TypeScript value access expression for a query field.
 // Returns something like "request.pageSize" for direct access.
 // For nested fields, uses direct dot access: "request.nested.string".
-func queryValueExpr(path httprule.FieldPath, message protoreflect.MessageDescriptor) string {
-	jp := jsonPath(path, message)
-	return "request." + jp
+func queryValueExpr(path httprule.FieldPath, message protoreflect.MessageDescriptor) (string, error) {
+	jp, err := jsonPath(path, message)
+	if err != nil {
+		return "", err
+	}
+	return "request." + jp, nil
 }
 
-func jsonPath(path httprule.FieldPath, message protoreflect.MessageDescriptor) string {
-	return strings.Join(jsonPathSegments(path, message), ".")
+func jsonPath(path httprule.FieldPath, message protoreflect.MessageDescriptor) (string, error) {
+	segs, err := jsonPathSegments(path, message)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join(segs, "."), nil
 }
 
-func nullPropagationPath(path httprule.FieldPath, message protoreflect.MessageDescriptor) string {
-	return strings.Join(jsonPathSegments(path, message), "?.")
+func nullPropagationPath(path httprule.FieldPath, message protoreflect.MessageDescriptor) (string, error) {
+	segs, err := jsonPathSegments(path, message)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join(segs, "?."), nil
 }
 
-func jsonPathSegments(path httprule.FieldPath, message protoreflect.MessageDescriptor) []string {
+func jsonPathSegments(path httprule.FieldPath, message protoreflect.MessageDescriptor) ([]string, error) {
 	segs := make([]string, len(path))
 	for i, p := range path {
 		field := message.Fields().ByName(protoreflect.Name(p))
+		if field == nil {
+			return nil, fmt.Errorf("field %q not found in message %s", p, message.FullName())
+		}
 		segs[i] = field.JSONName()
 		if i < len(path) {
 			message = field.Message()
 		}
 	}
-	return segs
+	return segs, nil
 }
