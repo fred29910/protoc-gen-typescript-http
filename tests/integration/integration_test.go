@@ -44,6 +44,15 @@ func Test_Generation(t *testing.T) {
 	err = cmd.Run()
 	assert.NilError(t, err, "buf generate failed")
 	
+	// Format the generated code with deno fmt
+	cmd = exec.Command("deno", "fmt", "gen/typescript")
+	cmd.Dir = filepath.Join(absRoot, "examples", "proto")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	
+	err = cmd.Run()
+	assert.NilError(t, err, "deno fmt failed")
+	
 	// Verify that the generated code is clean (no git diff)
 	verifyClean(t, absRoot)
 }
