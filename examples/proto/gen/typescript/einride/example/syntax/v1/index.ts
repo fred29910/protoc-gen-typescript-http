@@ -284,6 +284,7 @@ export type Request = {
   string: string | undefined;
   repeatedString: string[] | undefined;
   nested: Request_Nested | undefined;
+  labels: { [key: string]: string } | undefined;
 };
 
 export type Request_Nested = {
@@ -297,6 +298,7 @@ export interface SyntaxService {
   Body(request: Request): Promise<Message>;
   Path(request: Request): Promise<Message>;
   PathBody(request: Request): Promise<Message>;
+  MapQuery(request: Request): Promise<Message>;
 }
 
 type RequestType = {
@@ -325,6 +327,11 @@ export function createSyntaxServiceClient(
       }
       if (request.nested?.string !== undefined && request.nested?.string !== null) {
         queryParams.push(`nested.string=${encodeURIComponent(request.nested.string.toString())}`)
+      }
+      if (request.labels !== undefined && request.labels !== null) {
+        Object.entries(request.labels).forEach(([key, value]) => {
+          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        })
       }
       let uri = path;
       if (queryParams.length > 0) {
@@ -385,6 +392,11 @@ export function createSyntaxServiceClient(
           queryParams.push(`repeatedString=${encodeURIComponent(x.toString())}`)
         })
       }
+      if (request.labels !== undefined && request.labels !== null) {
+        Object.entries(request.labels).forEach(([key, value]) => {
+          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        })
+      }
       let uri = path;
       if (queryParams.length > 0) {
         uri += `?${queryParams.join("&")}`
@@ -413,6 +425,11 @@ export function createSyntaxServiceClient(
       if (request.nested?.string !== undefined && request.nested?.string !== null) {
         queryParams.push(`nested.string=${encodeURIComponent(request.nested.string.toString())}`)
       }
+      if (request.labels !== undefined && request.labels !== null) {
+        Object.entries(request.labels).forEach(([key, value]) => {
+          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        })
+      }
       let uri = path;
       if (queryParams.length > 0) {
         uri += `?${queryParams.join("&")}`
@@ -438,6 +455,11 @@ export function createSyntaxServiceClient(
           queryParams.push(`repeatedString=${encodeURIComponent(x.toString())}`)
         })
       }
+      if (request.labels !== undefined && request.labels !== null) {
+        Object.entries(request.labels).forEach(([key, value]) => {
+          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        })
+      }
       let uri = path;
       if (queryParams.length > 0) {
         uri += `?${queryParams.join("&")}`
@@ -449,6 +471,39 @@ export function createSyntaxServiceClient(
       }, {
         service: "SyntaxService",
         method: "PathBody",
+      }) as Promise<Message>;
+    },
+    MapQuery(request) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      const path = `v1:mapQuery`; // eslint-disable-line quotes
+      const body = null;
+      const queryParams: string[] = [];
+      if (request.string !== undefined && request.string !== null) {
+        queryParams.push(`string=${encodeURIComponent(request.string.toString())}`)
+      }
+      if (request.repeatedString !== undefined && request.repeatedString !== null) {
+        request.repeatedString.forEach((x) => {
+          queryParams.push(`repeatedString=${encodeURIComponent(x.toString())}`)
+        })
+      }
+      if (request.nested?.string !== undefined && request.nested?.string !== null) {
+        queryParams.push(`nested.string=${encodeURIComponent(request.nested.string.toString())}`)
+      }
+      if (request.labels !== undefined && request.labels !== null) {
+        Object.entries(request.labels).forEach(([key, value]) => {
+          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        })
+      }
+      let uri = path;
+      if (queryParams.length > 0) {
+        uri += `?${queryParams.join("&")}`
+      }
+      return handler({
+        path: uri,
+        method: "GET",
+        body,
+      }, {
+        service: "SyntaxService",
+        method: "MapQuery",
       }) as Promise<Message>;
     },
   };
