@@ -15,7 +15,6 @@
 ├── Makefile                   # Makefile wrapper with tool installation
 ├── go.mod / go.sum            # Go module dependencies
 ├── .goreleaser.yml            # GoReleaser configuration
-├── .eslintrc.js               # ESLint config for generated TypeScript
 ├── AGENTS.md                  # AI agent configuration
 ├── CODE_OF_CONDUCT.md         # Contributor code of conduct
 ├── LICENSE                    # Project license
@@ -66,7 +65,7 @@
 |---|---|
 | `mage build` | 构建插件二进制文件到 `bin/protoc-gen-typescript-http`（带 `--trimpath`） |
 | `mage test` | 运行单元测试 |
-| `mage integration` | 运行集成测试（构建插件 → buf generate → git diff 验证） |
+| `mage integration` | 运行集成测试（构建插件 → buf generate → deno fmt 格式化 → git diff 验证） |
 | `mage clean` | 清理构建产物（`go clean` + 删除 `bin/`） |
 
 ### Makefile 任务
@@ -79,7 +78,8 @@ Makefile 提供了 Mage 任务的包装器，并额外支持工具安装和 prot
 | `make test` | 安装 mage → 执行 `mage test` |
 | `make integration` | 安装 buf + mage → 执行 `mage integration` |
 | `make lint` | 在 `examples/proto/` 上运行 `buf lint` |
-| `make generate` | 构建插件 → 在 `examples/proto/` 下运行 `buf generate` |
+| `make generate` | 构建插件 → 在 `examples/proto/` 下运行 `buf generate` → `deno fmt` 格式化 |
+| `make clean` | 删除 `.tools/`、`bin/`、`examples/proto/gen/typescript/` |
 | `make clean` | 删除 `.tools/`、`bin/`、`examples/proto/gen/typescript/` |
 
 Makefile 会自动在 `.tools/` 目录下安装所需的工具版本（buf、mage），无需全局安装。首次运行时会自动安装。您也可以通过 `make install-buf` 或 `make install-mage` 单独安装。这些工具被安装到 `.tools/buf/<version>/` 和 `.tools/mage/<version>/` 目录中。这些目录已在 `.gitignore` 中排除，不会提交到仓库。仅当您需要手动管理工具版本时，才需关注这些目录。通常情况下，直接运行 `make build` 等目标即可自动处理工具安装。
@@ -105,7 +105,8 @@ mage test
 集成测试步骤：
 1. 构建插件二进制文件
 2. 使用构建好的插件在 `examples/proto/` 中运行 `buf generate`
-3. 通过 `git diff --exit-code` 验证生成的代码与已提交的代码一致
+3. 对生成的 TypeScript 执行 `deno fmt` 格式化
+4. 通过 `git diff --exit-code` 验证生成的代码与已提交的代码一致
 
 ```bash
 mage integration
@@ -138,7 +139,7 @@ buf generate
 
 - **Go**：标准的 `gofmt` 格式化，使用 `fmt.Errorf("context: %w", err)` 进行错误包装
 - **Protobuf**：在示例中遵循 [Google AIP](https://google.aip.dev/) 规范
-- **生成的 TypeScript**：使用 `@ts-nocheck` 和 `eslint-disable camelcase` 来抑制 proto 命名风格带来的警告
+- **生成的 TypeScript**：使用 `@ts-nocheck`、`eslint-disable camelcase` 和 `deno-lint-ignore-file` 来抑制 proto 命名风格带来的警告，并使用 `deno fmt` 格式化
 - **测试**：通过标准的 `go test` 进行单元测试，通过构建标签 `//go:build integration` 进行集成测试
 
 ## 发布流程
