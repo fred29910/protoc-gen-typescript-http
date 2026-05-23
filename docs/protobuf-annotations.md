@@ -49,11 +49,12 @@ rpc DeleteShipper(DeleteShipperRequest) returns (Shipper) {
 
 ### Body 绑定规则
 
-| Body 值 | 效果 |
-|---|---|
-| 未指定 | 无 body (GET/DELETE)，为 `null` |
-| `"*"` | 整个请求消息都会被序列化为 JSON body |
-| `"field_name"` | 仅将 `request.field_name` 序列化为 JSON body |
+| Body 值 | 效果 | 生成代码 |
+|---|---|---|
+| 未指定 | 无 body (GET/DELETE)，为 `null` | `const body = null;` |
+| `"*"` | 整个请求消息都会被序列化为 JSON body | `const body = JSON.stringify(request);` |
+| `"field_name"` | 仅将 `request.field_name` 序列化为 JSON body | `const body = JSON.stringify(request?.fieldName ?? {});` |
+| `"nested.field"` | 嵌套字段序列化为 JSON body | `const body = JSON.stringify(request?.nested?.field ?? {});` |
 
 ### 路径变量
 
@@ -68,6 +69,7 @@ rpc GetSite(GetSiteRequest) returns (Site) {
 本插件会：
 1. 在发起请求前验证该字段是否非空
 2. 使用 `request.name` 构建 URL（其中 proto 字段名会转换为 JSON 的 camelCase 驼峰命名）
+3. 路径变量值会经过 `encodeURIComponent` 编码；对于包含子模板的变量（如 `{name=shippers/*}`），会保留语义性的斜杠
 
 ### 自定义动词
 
@@ -79,7 +81,24 @@ rpc QueryOnly(Request) returns (Message) {
 }
 ```
 
-这会生成一个方法为 GET 且 URL 路径为 `/v1:query` 的请求。
+这会生成一个方法为 GET 且 URL 路径为 `v1:query` 的请求。
+
+### 自定义 HTTP 方法 (`custom`)
+
+当需要非标准 HTTP 方法时，使用 `custom` 字段：
+
+```protobuf
+rpc CustomMethod(Request) returns (Message) {
+  option (google.api.http) = {
+    custom: {
+      kind: "FETCH"     // 自定义 HTTP 方法名
+      path: "/v1/action"
+    }
+  };
+}
+```
+
+生成的客户端会使用 `custom.kind` 中指定的字符串作为 HTTP 方法。
 
 ### 额外绑定
 
@@ -98,7 +117,7 @@ rpc LegacyCreateShipper(CreateShipperRequest) returns (Shipper) {
 }
 ```
 
-注意：`google.api.http.additional_bindings` 中的额外绑定会被解析并呈现在 `Rule.AdditionalRules` 字段中，但目前每个方法仅会生成主绑定的实现。
+> **当前行为**：`google.api.http.additional_bindings` 中的额外绑定会被解析并呈现在 `Rule.AdditionalRules` 字段中，但每个方法**仅生成主绑定的实现**。`additional_bindings` 中的额外路由不会生成对应的 client 方法。
 
 ## 字段行为 (`google.api.field_behavior`)
 
@@ -113,11 +132,13 @@ google.protobuf.Timestamp create_time = 2 [(google.api.field_behavior) = OUTPUT_
 
 ```typescript
 // Behaviors: REQUIRED
-name?: string;
+name: string | undefined;
 
 // Behaviors: OUTPUT_ONLY
-createTime?: string;
+createTime: wellKnownTimestamp | undefined;
 ```
+
+> 注意：`REQUIRED` 字段当前生成 `: T | undefined` 类型而非 `?: T`（即非 optional），以符合 proto3 的 zero-value 语义。调用方仍需在运行时处理字段可能为 `undefined` 的情况。
 
 ## 资源注解 (`google.api.resource`)
 
@@ -150,7 +171,7 @@ message Shipper {
 | `put` | `PUT` |
 | `patch` | `PATCH` |
 | `delete` | `DELETE` |
-| `custom` | 自定义（来自 `custom.kind`） |
+| `custom` | `custom.kind` 中的值 |
 
 ## 不支持的 RPC 模式
 

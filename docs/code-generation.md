@@ -8,6 +8,8 @@
 package einride.example.freight.v1 → einride/example/freight/v1/index.ts
 ```
 
+如果多个 `.proto` 文件声明了相同的 Protobuf package，它们会被合并到同一个 `index.ts` 文件中。
+
 ## Generation Phases
 
 ### 1. Header
@@ -34,6 +36,8 @@ Protobuf message 会转换为 TypeScript type alias。
 | `enum` | Enum 值的 string union type |
 | `message` (non-WKT) | 引用的 type name |
 
+> **注意**：`int64`/`uint64` 等 64 位整数类型当前映射为 `number`，在超出 `Number.MAX_SAFE_INTEGER` 的值时可能存在精度风险。Proto JSON 规范建议使用 `string` 表示 64 位整型，但目前尚未采用。
+
 **Container type mapping：**
 
 | Protobuf modifier | TypeScript type |
@@ -41,8 +45,8 @@ Protobuf message 会转换为 TypeScript type alias。
 | `repeated T` | `T[]` |
 | `map<K, V>` | `{ [key: string]: V }` |
 
-**Optional/oneof fields** 会获得 `?:`（optional property）。  
-**Required fields**（非 oneof、非 optional）会获得 `: T \| undefined`，以符合 proto3 的 zero-value 语义。
+**Optional/oneof fields** 会获得 `?:`（optional property）。
+**Required fields**（非 oneof、非 optional、非 `optional` 关键字）会获得 `: T | undefined`，以符合 proto3 的 zero-value 语义。
 
 ```typescript
 // Generated example for a message with optional and required fields
@@ -55,6 +59,8 @@ export type GetShipperRequest = {
 };
 ```
 
+> **已知限制**：oneof 字段被生成为独立的 optional 字段（`?:`），无法在 TypeScript 类型层面表达互斥关系。需要调用方在运行时保证仅设置其中一个字段。
+
 ### 3. Enum Generation: `enumgen.go`
 
 Protobuf enum 会转换为 TypeScript string union type：
@@ -66,7 +72,7 @@ export type Enum =
   | "ENUM_TWO";
 ```
 
-Single-value enum 使用 `=` 代替 union：
+Single-value enum 使用 `=` 代替 `|`：
 
 ```typescript
 export type SingleValueEnum = "ONLY_VALUE";
@@ -84,7 +90,10 @@ export interface FreightService {
 }
 ```
 
-只有带有 HTTP annotation 且为非 streaming signature 的 method 才会包含在内。
+只有满足以下条件的方法才会包含在内：
+- 带有 `google.api.http` annotation
+- 非 client-streaming（请求中不含 `stream`）
+- 非 server-streaming（响应中不含 `stream`）
 
 ### 5. Request Handler Type: `servicegen.go`
 
@@ -99,6 +108,8 @@ type RequestType = {
 
 type RequestHandler = (request: RequestType, meta: { service: string, method: string }) => Promise<unknown>;
 ```
+
+> **注意**：`RequestType` 和 `RequestHandler` **未被导出**（`export`），因此无法从生成的模块中直接 import 使用。在适配 HTTP 客户端时，需要在代码中自行声明等效类型，或直接内联类型标注。
 
 这允许用户接入任何 HTTP client（如 fetch、axios 等）。
 
@@ -116,10 +127,32 @@ if (!request.name) {
 }
 ```
 
-**b. URL construction**：使用 template literal 构建 path：
+对于嵌套字段，使用 optional chaining：
 
 ```typescript
-const path = `/v1/${request.name}`;
+if (!request.shipper?.name) {
+  throw new Error("missing required field request.shipper.name");
+}
+```
+
+**b. URL construction**：使用 template literal 构建 path（注意：**不包含前导 `/`**）：
+
+对于标准变量（如 `{id}`），直接使用 `encodeURIComponent` 编码：
+
+```typescript
+const path = `v1/${encodeURIComponent(request.id)}`; // eslint-disable-line quotes
+```
+
+对于通配符子模板变量（如 `{name=shippers/*}` 或 `{name=**}`），其值中可能包含语义性的斜杠，先按 `/` 分割再逐段编码：
+
+```typescript
+const path = `v1/${request.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
+```
+
+自定义动词会追加到路径末尾：
+
+```typescript
+const path = `v1:customVerb`; // eslint-disable-line quotes
 ```
 
 **c. Body serialization**：基于 `body` 子句：
@@ -129,13 +162,37 @@ const path = `/v1/${request.name}`;
 | unset (no body) | `const body = null;` |
 | `"*"` (whole message) | `const body = JSON.stringify(request);` |
 | `"field_name"` | `const body = JSON.stringify(request?.fieldName ?? {});` |
+| `"nested.field"` | `const body = JSON.stringify(request?.nested?.field ?? {});` |
 
-**d. Query parameter construction**：所有剩余的 field（不在 path 中，也不在 body 中）都会转换为 query parameter：
+**d. Query parameter construction**：所有剩余的 field（不在 path 中，也不在 body 中）都会转换为 query parameter。
+
+对于标量字段，使用严格的 `!== undefined && !== null` 检查（而非简单的 truthy 检查，以避免 `0`、`false`、`""` 被错误排除）：
 
 ```typescript
 const queryParams: string[] = [];
-if (request.pageSize) {
-  queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`);
+if (request.pageSize !== undefined && request.pageSize !== null) {
+  queryParams.push(`pageSize=${encodeURIComponent(request.pageSize.toString())}`)
+}
+```
+
+对于 repeated（数组）字段，使用 `forEach` 遍历：
+
+```typescript
+if (request.tags !== undefined && request.tags !== null) {
+  request.tags.forEach((x) => {
+    queryParams.push(`tags=${encodeURIComponent(x.toString())}`)
+  })
+}
+```
+
+对于 map 字段，按 key 排序后逐项添加：
+
+```typescript
+if (request.metadata !== undefined && request.metadata !== null) {
+  Object.keys(request.metadata).sort().forEach((key) => {
+    const value = request.metadata[key];
+    queryParams.push(`metadata[${encodeURIComponent(key)}]=${encodeURIComponent(value.toString())}`)
+  })
 }
 ```
 
@@ -144,7 +201,7 @@ if (request.pageSize) {
 ```typescript
 let uri = path;
 if (queryParams.length > 0) {
-  uri += `?${queryParams.join("&")}`;
+  uri += `?${queryParams.join("&")}`
 }
 return handler({
   path: uri,
@@ -158,20 +215,24 @@ return handler({
 
 ### 7. Well-Known Types: `wellknown.go`
 
-Google Well-Known Types (WKT) 会映射为符合 TypeScript 习惯的类型：
+Google Well-Known Types (WKT) 会映射为符合 TypeScript 习惯的类型，并在生成代码中附带详细的 JSON 编码说明注释：
 
-| Well-Known Type (WKT) | TypeScript |
-|---|---|
-| `google.protobuf.Any` | `{ "@type": string; [key: string]: unknown }` |
-| `google.protobuf.Duration` | `string` (RFC 3339, suffix "s") |
-| `google.protobuf.Timestamp` | `string` (RFC 3339, Z-normalized) |
-| `google.protobuf.Empty` | `Record<never, never>` |
-| `google.protobuf.FieldMask` | `string` (逗号分隔的 path) |
-| `google.protobuf.Struct` | `Record<string, unknown>` |
-| `google.protobuf.Value` | `unknown` |
-| `google.protobuf.ListValue` | `unknown[]` |
-| `google.protobuf.NullValue` | `null` |
-| Wrapper type (`Int64Value`, `StringValue`, `BoolValue` 等) | `number \| null` / `string \| null` / `boolean \| null` |
+| Well-Known Type (WKT) | TypeScript | 运行时说明 |
+|---|---|---|
+| `google.protobuf.Any` | `{ "@type": string; [key: string]: unknown }` | 包含 `@type` 字段标识实际数据类型 |
+| `google.protobuf.Duration` | `string` | RFC 3339 格式，以 "s" 结尾 |
+| `google.protobuf.Timestamp` | `string` | RFC 3339 格式，Z-normalized |
+| `google.protobuf.Empty` | `Record<never, never>` | 空 JSON 对象 `{}` |
+| `google.protobuf.FieldMask` | `string` | 逗号分隔的 camelCase 路径 |
+| `google.protobuf.Struct` | `Record<string, unknown>` | 任意 JSON 对象 |
+| `google.protobuf.Value` | `unknown` | 任意 JSON 值 |
+| `google.protobuf.ListValue` | `unknown[]` | JSON 数组 |
+| `google.protobuf.NullValue` | `null` | JSON null |
+| Wrapper type (`DoubleValue`, `FloatValue`, `Int64Value`, `UInt64Value`, `Int32Value`, `UInt32Value`) | `number \| null` | 可为 null 的数字 |
+| `BoolValue` | `boolean \| null` | 可为 null 的布尔值 |
+| `StringValue`, `BytesValue` | `string \| null` | 可为 null 的字符串 |
+
+> **注意**：WKT 类型的运行时值需要调用方按 JSON 编码规范传入，插件不做运行时转换。例如 `Timestamp` 期望 RFC 3339 格式的字符串，`Duration` 期望以 "s" 结尾的字符串。
 
 ### 8. Comments: `commentgen.go`
 
@@ -179,6 +240,25 @@ Protobuf 源码中的 comment 会传播到生成的 TypeScript 中：
 
 - message、field、enum、enum value、service 和 method 上的 leading comment 会输出为 `//` comment。
 - Field behavior annotation（`google.api.field_behavior`）会附加为 `// Behaviors: REQUIRED, OUTPUT_ONLY`。
+
+### 9. Footer
+
+每个生成文件的末尾会包含 protoc 插件协议定义的插入点标记：
+
+```typescript
+// @@protoc_insertion_point(typescript-http-eof)
+```
+
+## Generated Code Annotations
+
+生成的 TypeScript 代码中包含以下 ESLint/TypeScript 抑制注解：
+
+| Annotation | 位置 | 用途 |
+|---|---|---|
+| `/* eslint-disable camelcase */` | 文件头部 | 允许 proto 风格的字段命名（snake_case JSON 名） |
+| `// @ts-nocheck` | 文件头部 | 抑制 TypeScript 严格检查（如未使用的类型） |
+| `// eslint-disable-line @typescript-eslint/no-unused-vars` | 每个 client 方法 | 方法参数 `request` 可能在某些 HTTP 绑定中未使用 |
+| `// eslint-disable-line quotes` | path template literal | 避免 template literal 中反引号与单引号的 lint 警告 |
 
 ## Type Scoping: `helpers.go`
 
@@ -193,3 +273,14 @@ Nested message type 会使用下划线进行扁平化：
 ```
 message Message.NestedMessage → type name: Message_NestedMessage
 ```
+
+## Known Limitations
+
+| Limitation | Description | Impact |
+|---|---|---|
+| **RequestHandler not exported** | `RequestType` 和 `RequestHandler` 是未导出的类型，不能直接 import | 用户需自行声明等效类型 |
+| **oneof as optional fields** | Oneof 字段被展开为多个 `?:` 可选字段，类型系统无法表达互斥 | 需调用方保证运行时互斥 |
+| **64-bit integer as number** | int64/uint64 映射为 `number`，超过 `2^53-1` 的值会丢失精度 | 建议调用方自行处理大整数 |
+| **No runtime conversion** | WKT 类型仅做类型声明，不做运行时值转换 | 调用方需按 JSON 规范传入正确格式 |
+| **additional_bindings** | 仅生成主 HTTP 绑定的 client 代码，`additional_bindings` 被解析但不生成实现 | 需要 alternative binding 时需手动实现 |
+| **No leading /** | 生成的 URL path 不包含前导 `/`（如 `v1/shippers`），需调用方自行拼接 root URL | 注意避免 `https://host + v1/...` 产生双斜杠 |
