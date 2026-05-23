@@ -30,6 +30,6 @@ snapshot:
 
 release:
   github:
-    owner: go-kratos
+    owner: fred29910
     name: protoc-gen-typescript-http
   prerelease: auto
