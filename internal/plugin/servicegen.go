@@ -80,6 +80,9 @@ func (s serviceGenerator) generateClient(f *codegen.File) error {
 }
 
 func (s serviceGenerator) generateMethod(f *codegen.File, method protoreflect.MethodDescriptor) error {
+	if !supportedMethod(method) {
+		return nil
+	}
 	outputType := typeFromMessage(s.pkg, method.Output())
 	r, ok := httprule.Get(method)
 	if !ok {
