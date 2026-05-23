@@ -240,8 +240,9 @@ func (s serviceGenerator) generateMethodQuery(
 			f.P(t(5), "queryParams.push(`", jp, "=${encodeURIComponent(x.toString())}`)")
 			f.P(t(4), "})")
 		case field.IsMap():
-			f.P(t(4), "Object.entries(request.", jp, ").forEach(([key, value]) => {")
-			f.P(t(5), "queryParams.push(`", jp, "[${key}]=${encodeURIComponent(value.toString())}`)")
+			f.P(t(4), "Object.keys(request.", jp, ").sort().forEach((key) => {")
+			f.P(t(5), "const value = request.", jp, "[key];")
+			f.P(t(5), "queryParams.push(`", jp, "[${encodeURIComponent(key)}]=${encodeURIComponent(value.toString())}`)")
 			f.P(t(4), "})")
 		default:
 			f.P(t(4), "queryParams.push(`", jp, "=${encodeURIComponent(request.", jp, ".toString())}`)")
