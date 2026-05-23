@@ -6,3 +6,6 @@ bin
 .agents
 .sisyphus/
 .tools/
+node_modules
+package-lock.json
+package.json
