@@ -39,6 +39,10 @@ service SyntaxService {
       body: "nested"
     };
   }
+
+  rpc MapQuery(Request) returns (Message) {
+    option (google.api.http) = {get: "/v1:mapQuery"};
+  }
 }
 
 message Request {
@@ -48,4 +52,5 @@ message Request {
     string string = 1;
   }
   Nested nested = 3;
+  map<string, string> labels = 4;
 }
