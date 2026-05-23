@@ -194,7 +194,8 @@ func (s serviceGenerator) generateMethodBody(
 	case rule.Body == "*":
 		f.P(t(3), "const body = JSON.stringify(request);")
 	default:
-		nullPath, err := nullPropagationPath(httprule.FieldPath{rule.Body}, input)
+		bodyPath := httprule.FieldPath(strings.Split(rule.Body, "."))
+		nullPath, err := nullPropagationPath(bodyPath, input)
 		if err != nil {
 			return fmt.Errorf("method body null propagation: %w", err)
 		}
@@ -229,8 +230,11 @@ func (s serviceGenerator) generateMethodQuery(
 		if _, ok := pathCovered[path.String()]; ok {
 			return
 		}
-		if rule.Body != "" && path[0] == rule.Body {
-			return
+		if rule.Body != "" && rule.Body != "*" {
+			bodySegments := strings.Split(rule.Body, ".")
+			if pathStartsWith(path, bodySegments) {
+				return
+			}
 		}
 		presenceExpr, err := queryPresenceExpr(path, input)
 		if err != nil {
@@ -273,6 +277,19 @@ func isWildcardVariable(seg httprule.Segment) bool {
 		return false // simple {id} — no sub-template
 	}
 	return true // has sub-template like {name=shippers/*} or {name=**}
+}
+
+// pathStartsWith returns true if path starts with the given prefix segments.
+func pathStartsWith(path httprule.FieldPath, prefix []string) bool {
+	if len(path) < len(prefix) {
+		return false
+	}
+	for i, seg := range prefix {
+		if string(path[i]) != seg {
+			return false
+		}
+	}
+	return true
 }
 
 func supportedMethod(method protoreflect.MethodDescriptor) bool {

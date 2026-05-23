@@ -329,8 +329,9 @@ export function createSyntaxServiceClient(
         queryParams.push(`nested.string=${encodeURIComponent(request.nested.string.toString())}`)
       }
       if (request.labels !== undefined && request.labels !== null) {
-        Object.entries(request.labels).forEach(([key, value]) => {
-          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        Object.keys(request.labels).sort().forEach((key) => {
+          const value = request.labels[key];
+          queryParams.push(`labels[${encodeURIComponent(key)}]=${encodeURIComponent(value.toString())}`)
         })
       }
       let uri = path;
@@ -393,8 +394,9 @@ export function createSyntaxServiceClient(
         })
       }
       if (request.labels !== undefined && request.labels !== null) {
-        Object.entries(request.labels).forEach(([key, value]) => {
-          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        Object.keys(request.labels).sort().forEach((key) => {
+          const value = request.labels[key];
+          queryParams.push(`labels[${encodeURIComponent(key)}]=${encodeURIComponent(value.toString())}`)
         })
       }
       let uri = path;
@@ -414,7 +416,7 @@ export function createSyntaxServiceClient(
       if (!request.string) {
         throw new Error("missing required field request.string");
       }
-      const path = `v1/${request.string}:path`; // eslint-disable-line quotes
+      const path = `v1/${encodeURIComponent(request.string)}:path`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       if (request.repeatedString !== undefined && request.repeatedString !== null) {
@@ -426,8 +428,9 @@ export function createSyntaxServiceClient(
         queryParams.push(`nested.string=${encodeURIComponent(request.nested.string.toString())}`)
       }
       if (request.labels !== undefined && request.labels !== null) {
-        Object.entries(request.labels).forEach(([key, value]) => {
-          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        Object.keys(request.labels).sort().forEach((key) => {
+          const value = request.labels[key];
+          queryParams.push(`labels[${encodeURIComponent(key)}]=${encodeURIComponent(value.toString())}`)
         })
       }
       let uri = path;
@@ -447,7 +450,7 @@ export function createSyntaxServiceClient(
       if (!request.string) {
         throw new Error("missing required field request.string");
       }
-      const path = `v1/${request.string}:pathBody`; // eslint-disable-line quotes
+      const path = `v1/${encodeURIComponent(request.string)}:pathBody`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.nested ?? {});
       const queryParams: string[] = [];
       if (request.repeatedString !== undefined && request.repeatedString !== null) {
@@ -456,8 +459,9 @@ export function createSyntaxServiceClient(
         })
       }
       if (request.labels !== undefined && request.labels !== null) {
-        Object.entries(request.labels).forEach(([key, value]) => {
-          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        Object.keys(request.labels).sort().forEach((key) => {
+          const value = request.labels[key];
+          queryParams.push(`labels[${encodeURIComponent(key)}]=${encodeURIComponent(value.toString())}`)
         })
       }
       let uri = path;
@@ -489,8 +493,9 @@ export function createSyntaxServiceClient(
         queryParams.push(`nested.string=${encodeURIComponent(request.nested.string.toString())}`)
       }
       if (request.labels !== undefined && request.labels !== null) {
-        Object.entries(request.labels).forEach(([key, value]) => {
-          queryParams.push(`labels[${key}]=${encodeURIComponent(value.toString())}`)
+        Object.keys(request.labels).sort().forEach((key) => {
+          const value = request.labels[key];
+          queryParams.push(`labels[${encodeURIComponent(key)}]=${encodeURIComponent(value.toString())}`)
         })
       }
       let uri = path;

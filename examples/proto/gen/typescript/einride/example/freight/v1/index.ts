@@ -437,7 +437,7 @@ export function createFreightServiceClient(
       if (!request.name) {
         throw new Error("missing required field request.name");
       }
-      const path = `v1/${request.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       let uri = path;
@@ -497,7 +497,7 @@ export function createFreightServiceClient(
       if (!request.shipper?.name) {
         throw new Error("missing required field request.shipper.name");
       }
-      const path = `v1/${request.shipper.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.shipper.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.shipper ?? {});
       const queryParams: string[] = [];
       if (request.updateMask !== undefined && request.updateMask !== null) {
@@ -520,7 +520,7 @@ export function createFreightServiceClient(
       if (!request.name) {
         throw new Error("missing required field request.name");
       }
-      const path = `v1/${request.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       let uri = path;
@@ -540,7 +540,7 @@ export function createFreightServiceClient(
       if (!request.name) {
         throw new Error("missing required field request.name");
       }
-      const path = `v1/${request.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       let uri = path;
@@ -560,7 +560,7 @@ export function createFreightServiceClient(
       if (!request.parent) {
         throw new Error("missing required field request.parent");
       }
-      const path = `v1/${request.parent}/sites`; // eslint-disable-line quotes
+      const path = `v1/${request.parent.split('/').map(p => encodeURIComponent(p)).join('/')}/sites`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       if (request.pageSize !== undefined && request.pageSize !== null) {
@@ -586,7 +586,7 @@ export function createFreightServiceClient(
       if (!request.parent) {
         throw new Error("missing required field request.parent");
       }
-      const path = `v1/${request.parent}/sites`; // eslint-disable-line quotes
+      const path = `v1/${request.parent.split('/').map(p => encodeURIComponent(p)).join('/')}/sites`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.site ?? {});
       const queryParams: string[] = [];
       let uri = path;
@@ -606,7 +606,7 @@ export function createFreightServiceClient(
       if (!request.site?.name) {
         throw new Error("missing required field request.site.name");
       }
-      const path = `v1/${request.site.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.site.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.site ?? {});
       const queryParams: string[] = [];
       if (request.updateMask !== undefined && request.updateMask !== null) {
@@ -629,7 +629,7 @@ export function createFreightServiceClient(
       if (!request.name) {
         throw new Error("missing required field request.name");
       }
-      const path = `v1/${request.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       let uri = path;
@@ -649,7 +649,7 @@ export function createFreightServiceClient(
       if (!request.name) {
         throw new Error("missing required field request.name");
       }
-      const path = `v1/${request.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       let uri = path;
@@ -669,7 +669,7 @@ export function createFreightServiceClient(
       if (!request.parent) {
         throw new Error("missing required field request.parent");
       }
-      const path = `v1/${request.parent}/shipments`; // eslint-disable-line quotes
+      const path = `v1/${request.parent.split('/').map(p => encodeURIComponent(p)).join('/')}/shipments`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       if (request.pageSize !== undefined && request.pageSize !== null) {
@@ -695,7 +695,7 @@ export function createFreightServiceClient(
       if (!request.parent) {
         throw new Error("missing required field request.parent");
       }
-      const path = `v1/${request.parent}/shipments`; // eslint-disable-line quotes
+      const path = `v1/${request.parent.split('/').map(p => encodeURIComponent(p)).join('/')}/shipments`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.shipment ?? {});
       const queryParams: string[] = [];
       let uri = path;
@@ -715,7 +715,7 @@ export function createFreightServiceClient(
       if (!request.shipment?.name) {
         throw new Error("missing required field request.shipment.name");
       }
-      const path = `v1/${request.shipment.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.shipment.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = JSON.stringify(request?.shipment ?? {});
       const queryParams: string[] = [];
       if (request.updateMask !== undefined && request.updateMask !== null) {
@@ -738,7 +738,7 @@ export function createFreightServiceClient(
       if (!request.name) {
         throw new Error("missing required field request.name");
       }
-      const path = `v1/${request.name}`; // eslint-disable-line quotes
+      const path = `v1/${request.name.split('/').map(p => encodeURIComponent(p)).join('/')}`; // eslint-disable-line quotes
       const body = null;
       const queryParams: string[] = [];
       let uri = path;
