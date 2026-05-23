@@ -83,6 +83,7 @@ lint: install-buf
 .PHONY: generate
 generate: build
 	cd examples/proto && PATH=$(abspath bin):$(BUF_DIR):$$PATH buf generate
+	cd examples/proto && deno fmt gen/typescript
 
 # === CI Pipeline ===
 # Runs the full check suite: vet → build → test → integration
