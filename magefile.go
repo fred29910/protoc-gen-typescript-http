@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/magefile/mage/mg"
@@ -23,19 +24,37 @@ func Build() error {
 	return sh.Run("go", "build", "--trimpath", "-o", filepath.Join("bin", "protoc-gen-typescript-http"), ".")
 }
 
-// Test runs the unit tests.
+// Test runs the unit tests (excludes integration tests via build tag).
 func Test() error {
 	fmt.Println("Running unit tests...")
-	return sh.RunV("go", "test", "-v", "./...")
+	return sh.RunV("go", "test", "-v", "-count=1", "./...")
+}
+
+// Vet runs go vet on the project.
+func Vet() error {
+	fmt.Println("Vetting...")
+	return sh.RunV("go", "vet", "./...")
+}
+
+// Fmt runs go fmt on the project and reports any formatting issues.
+func Fmt() error {
+	fmt.Println("Formatting...")
+	return sh.RunV("go", "fmt", "./...")
 }
 
 // Integration runs the integration tests.
-// This requires the plugin to be built first.
+// Requires buf to be installed and available in PATH.
+// Depends on: Build
 func Integration() error {
 	mg.Deps(Build)
 	fmt.Println("Running integration tests...")
 
-	// Add current bin to PATH
+	// Verify buf is available before running tests
+	if _, err := exec.LookPath("buf"); err != nil {
+		return fmt.Errorf("buf not found in PATH — please install buf first (e.g. 'make install-buf' or 'go install github.com/bufbuild/buf/cmd/buf@latest')")
+	}
+
+	// Add current bin directory to PATH so the test can find the plugin binary
 	binDir, err := filepath.Abs("bin")
 	if err != nil {
 		return err
@@ -46,7 +65,7 @@ func Integration() error {
 	defer os.Setenv("PATH", oldPath)
 
 	fmt.Println("Running integration test suite...")
-	return sh.RunV("go", "test", "-v", "-tags=integration", "./tests/integration/...")
+	return sh.RunV("go", "test", "-v", "-count=1", "-tags=integration", "./tests/integration/...")
 }
 
 // Clean cleans the project.

@@ -1,16 +1,27 @@
+# ============================================================================
+# protoc-gen-typescript-http — Makefile
+# 
+# This Makefile is a thin orchestrator that delegates Go-specific tasks to
+# magefile.go via the `mage` build tool. Run `mage -l` to see all available
+# mage targets.
+# ============================================================================
+
+# === Default ===
+
 .PHONY: all
 all: build test
 
-# === 工具版本 ===
-BUF_VERSION ?= v1.69.0
-MAGE_VERSION ?= v1.17.2
+# === Tool Versions ===
+
+BUF_VERSION   ?= v1.69.0
+MAGE_VERSION  ?= v1.17.2
 
 TOOLS_DIR := $(abspath .tools)
 BUF_DIR   := $(TOOLS_DIR)/buf/$(BUF_VERSION)
 MAGE_DIR  := $(TOOLS_DIR)/mage/$(MAGE_VERSION)
 TOOL_PATH := $(BUF_DIR):$(MAGE_DIR)
 
-# === 工具安装 ===
+# === Tool Installation ===
 
 .PHONY: install-buf
 install-buf: $(BUF_DIR)/buf
@@ -28,7 +39,9 @@ $(MAGE_DIR)/mage:
 	@mkdir -p $(MAGE_DIR) && \
 	GOBIN=$(MAGE_DIR) go install github.com/magefile/mage@$(MAGE_VERSION)
 
-# === Build / Test ===
+# === Go Tasks (delegated to magefile.go) ===
+# The following targets delegate to their mage equivalents.
+# All require mage to be installed.
 
 .PHONY: build
 build: install-mage
@@ -38,11 +51,30 @@ build: install-mage
 test: install-mage
 	PATH=$(TOOL_PATH):$$PATH mage test
 
+.PHONY: test-unit
+test-unit: test   # Alias for make test — runs only unit tests
+
+.PHONY: vet
+vet: install-mage
+	PATH=$(TOOL_PATH):$$PATH mage vet
+
+.PHONY: fmt
+fmt: install-mage
+	PATH=$(TOOL_PATH):$$PATH mage fmt
+
+# === Integration Tests ===
+# Delegates to mage Integration(), which:
+#   1. Builds the plugin (mg.Deps(Build))
+#   2. Adds bin/ to PATH so the plugin binary is discoverable
+#   3. Runs go test -tags=integration ./tests/integration/...
+# The integration test calls `buf generate` in examples/proto/
+# and verifies generated output matches committed code (git diff --exit-code).
+
 .PHONY: integration
 integration: install-buf install-mage
 	PATH=$(TOOL_PATH):$$PATH mage integration
 
-# === Lint / Generate (examples/proto) ===
+# === Proto Lint / Generate ===
 
 .PHONY: lint
 lint: install-buf
@@ -51,6 +83,13 @@ lint: install-buf
 .PHONY: generate
 generate: build
 	cd examples/proto && PATH=$(abspath bin):$(BUF_DIR):$$PATH buf generate
+
+# === CI Pipeline ===
+# Runs the full check suite: vet → build → test → integration
+
+.PHONY: ci
+ci: vet build test integration
+	@echo "✓ All checks passed"
 
 # === Clean ===
 
