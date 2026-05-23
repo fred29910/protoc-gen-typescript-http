@@ -19,6 +19,11 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
       - name: Setup buf
         uses: bufbuild/buf-setup-action@v1
         with:
