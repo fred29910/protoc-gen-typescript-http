@@ -46,8 +46,17 @@ Protobuf message 会转换为 TypeScript type alias。
 | `repeated T` | `T[]` |
 | `map<K, V>` | `{ [key: string]: V }` |
 
-**Optional/oneof fields** 会获得 `?:`（optional property）。
-**Required fields**（非 oneof、非 optional、非 `optional` 关键字）会获得 `: T | undefined`，以符合 proto3 的 zero-value 语义。
+**字段存在性（presence）的处理**由 `messagegen.go` 中的以下规则决定：
+
+| 字段情况 | TypeScript 签名 | 备注 |
+|---|---|---|
+| 普通字段（非 oneof、非 `optional`） | `name: T \| undefined;` | proto3 标量字段没有显式 presence，序列化时会包含默认值；TypeScript 端用 `\| undefined` 表达该属性可能未设置 |
+| proto3 `optional` 字段 | `name?: T;` | proto3 `optional` 关键字会开启 field presence 跟踪，类型为真正的 optional |
+| `oneof` 内的字段 | `name?: T;` | 同上，标记为 optional，但**不会**在类型系统层面表达 oneof 互斥语义 |
+
+> **关于 `required` 关键字**：proto3 已废弃 `required` 字段。当前使用 `(google.api.field_behavior) = REQUIRED` 注解表达"调用方必须提供"。该注解通过 `commentgen.go` 转化为 `// Behaviors: REQUIRED` 注释（见下文），并**不会**影响 TypeScript 类型签名——所有非 oneof/非 `optional` 的字段仍生成为 `: T | undefined`。
+>
+> **实现参考**：`messagegen.go` 中通过 `field.ContainingOneof() == nil && !field.HasOptionalKeyword()` 判定"普通字段"。
 
 ```typescript
 // Generated example for a message with optional and required fields
@@ -57,6 +66,12 @@ export type GetShipperRequest = {
   //
   // Behaviors: REQUIRED
   name: string | undefined;
+};
+
+// Generated example with proto3 optional
+export type UpdateRequest = {
+  displayName?: string;     // 来自 `optional string display_name = 1;`
+  // ...
 };
 ```
 

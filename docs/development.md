@@ -65,21 +65,28 @@
 |---|---|
 | `mage build` | 构建插件二进制文件到 `bin/protoc-gen-typescript-http`（带 `--trimpath`） |
 | `mage test` | 运行单元测试 |
-| `mage integration` | 运行集成测试（构建插件 → buf generate → deno fmt 格式化 → git diff 验证） |
+| `mage vet` | 对整个项目执行 `go vet` |
+| `mage fmt` | 对整个项目执行 `go fmt`（检查 Go 代码格式） |
+| `mage integration` | 运行集成测试（构建插件 → `buf generate` → `deno fmt` 格式化 → `git diff` 验证） |
 | `mage clean` | 清理构建产物（`go clean` + 删除 `bin/`） |
 
 ### Makefile 任务
 
-Makefile 提供了 Mage 任务的包装器，并额外支持工具安装和 proto 相关操作：
+Makefile 提供了 Mage 任务的包装器，并额外支持工具安装、proto 相关操作和 CI 流水线：
 
 | 命令 | 描述 |
 |---|---|
 | `make build` | 安装 mage → 执行 `mage build` |
 | `make test` | 安装 mage → 执行 `mage test` |
+| `make test-unit` | `make test` 的别名（仅运行单元测试） |
+| `make vet` | 安装 mage → 执行 `mage vet` |
+| `make fmt` | 安装 mage → 执行 `mage fmt` |
 | `make integration` | 安装 buf + mage → 执行 `mage integration` |
 | `make lint` | 在 `examples/proto/` 上运行 `buf lint` |
 | `make generate` | 构建插件 → 在 `examples/proto/` 下运行 `buf generate` → `deno fmt` 格式化 |
-| `make clean` | 删除 `.tools/`、`bin/`、`examples/proto/gen/typescript/` |
+| `make ci` | 执行完整 CI 流水线（`vet` → `build` → `test` → `integration`） |
+| `make install-buf` | 仅安装指定版本的 `buf` 到 `.tools/buf/<version>/` |
+| `make install-mage` | 仅安装指定版本的 `mage` 到 `.tools/mage/<version>/` |
 | `make clean` | 删除 `.tools/`、`bin/`、`examples/proto/gen/typescript/` |
 
 Makefile 会自动在 `.tools/` 目录下安装所需的工具版本（buf、mage），无需全局安装。首次运行时会自动安装。您也可以通过 `make install-buf` 或 `make install-mage` 单独安装。这些工具被安装到 `.tools/buf/<version>/` 和 `.tools/mage/<version>/` 目录中。这些目录已在 `.gitignore` 中排除，不会提交到仓库。仅当您需要手动管理工具版本时，才需关注这些目录。通常情况下，直接运行 `make build` 等目标即可自动处理工具安装。
@@ -134,6 +141,67 @@ buf generate
 2. 生成 TypeScript 代码：在 `examples/proto/` 目录下运行 `buf generate`
 3. 验证生成的输出：`git diff --exit-code examples/proto/gen/typescript`
 4. 提交 `.proto` 文件和生成的 `.ts` 文件
+
+## 测试
+
+测试分为两类：单元测试（无构建标签）和集成测试（构建标签 `integration`）。
+
+### 单元测试
+
+| 测试文件 | 覆盖范围 |
+|---|---|
+| `internal/httprule/template_test.go` | HTTP URL template 解析器：literal、wildcard（`*`/`**`）、variable 段；自定义 verb；validation 规则（嵌套变量、`**` 必须在末位、顶层禁止裸 `*`/`**`、变量重复绑定） |
+| `internal/plugin/servicegen_test.go` | 服务生成核心 helper：`isWildcardVariable`（判断是否为带子模板的通配符变量，决定是否保留语义斜杠）与 `pathStartsWith`（判断嵌套 path 是否以 body selector 为前缀） |
+
+运行单元测试：
+
+```bash
+mage test
+# 或
+go test ./...
+```
+
+### 集成测试
+
+集成测试位于 `tests/integration/integration_test.go`，以 `//go:build integration` 标签隔离：
+
+1. 构建插件二进制文件（依赖 `mage Build`）
+2. 在 `examples/proto/` 中运行 `buf generate` 生成 TypeScript
+3. 对生成的代码执行 `deno fmt` 格式化
+4. 通过 `git diff --exit-code` 验证生成产物与已提交代码一致
+
+运行集成测试：
+
+```bash
+mage integration
+# 或
+go test -tags=integration ./tests/integration/...
+```
+
+> **注意**：运行集成测试前必须先在 `PATH` 中找到 `buf`（可通过 `make install-buf` 安装到 `.tools/`，或全局安装）。`mage integration` 会自动把 `bin/` 目录加入 `PATH`，但不会自动安装 `buf`。
+
+### 建议的本地验证流程
+
+在提交前，建议依次执行以下检查（与 CI 中的 `make ci` 一致）：
+
+```bash
+make vet       # go vet
+make build     # 构建二进制
+make test      # 单元测试
+make integration  # 集成测试 + 生成产物校验
+```
+
+## CI/CD
+
+GitHub Actions 工作流位于 `.github/workflows/`，共三个：
+
+| 工作流 | 触发条件 | 内容 |
+|---|---|---|
+| `lint.yml` | push/PR 到 `main` | `gofmt` 检查、`go vet`、`golangci-lint`、`buf lint` |
+| `test.yml` | push/PR 到 `main` | 单元测试 + 集成测试（含 `deno fmt` 校验） |
+| `release.yml` | 推送 `v*` tag | 通过 GoReleaser 跨平台构建并发布 release |
+
+完整的 CI 流水线说明见 [ci-cd.md](./ci-cd.md)。
 
 ## 代码规范
 
