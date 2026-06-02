@@ -1,6 +1,32 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": [
-    "oh-my-openagent@latest"
-  ]
+  "model": "opencode/nemotron-3-super-free",
+  "small_model": "opencode/deepseek-v4-flash-free",
+  "agent": {
+    "plan": {
+      "mode": "primary",
+      "model": "opencode/mimo-v2.5-free",
+      "reasoningEffort": "high"
+    },
+    "build": {
+      "mode": "primary",
+      "model": "opencode/minimax-m3-free",
+       "reasoningEffort": "high"
+    },
+    "explore": {
+      "model": "opencode/deepseek-v4-flash-free"
+    },
+    "scout": {
+      "model": "opencode/big-pickle"
+    },
+    "compaction": {
+      "model": "openrouter/openrouter/owl-alpha"
+    },
+    "title": {
+      "model": "opencode/big-pickle"
+    },
+    "summary": {
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free"
+    }
+  }
 }
