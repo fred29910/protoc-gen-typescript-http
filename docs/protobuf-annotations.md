@@ -117,7 +117,7 @@ rpc LegacyCreateShipper(CreateShipperRequest) returns (Shipper) {
 }
 ```
 
-> **当前行为**：`google.api.http.additional_bindings` 中的额外绑定会被解析并呈现在 `Rule.AdditionalRules` 字段中，但每个方法**仅生成主绑定的实现**。`additional_bindings` 中的额外路由不会生成对应的 client 方法。
+> **当前行为**：自 2026-06-02 起，`google.api.http.additional_bindings` 中的额外绑定会按 first-match-wins 语义参与生成。每个 binding 编译为独立 TS 分支：第一个所有 path 变量都满足的 binding 被选中；无任何 binding 匹配时生成 `throw new Error("no matching binding for <Method>")` 兜底。历史行为（仅生成主绑定）在评审 `2026-06-02-golang-tool-project-review.md` 中标记为 P0 #1，已通过 spec/plan 闭环。
 
 ## 字段行为 (`google.api.field_behavior`)
 

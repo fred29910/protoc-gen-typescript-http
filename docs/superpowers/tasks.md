@@ -20,7 +20,7 @@
   16. RequestHandler、RequestType 应 export，否则 README 中用户无法直接导入使用。
 
   P1 HTTP 功能完整性
-  17. 支持 additional_bindings 的生成策略：可以生成多个 client 方法变体，或提供 binding selector。
+  17. ~~支持 additional_bindings 的生成策略：可以生成多个 client 方法变体，或提供 binding selector。~~ 已闭环（2026-06-02）：first-match-wins binding selector，spec 在 `docs/superpowers/specs/2026-06-02-additional-bindings-selector-design.md`。
   18. 支持 google.api.http.custom 的测试用例，不只靠代码路径。
   19. 补充 PUT/PATCH/DELETE/POST/GET 全方法 golden 覆盖。
   20. 明确是否支持无前导 / 的输出 path；现在生成 v1/...，用户拼接 root URL 时容易出错。
@@ -43,7 +43,7 @@
   33. 文档中 RequestHandler 示例应匹配是否 export。
   34. fetch 示例应处理 Content-Type: application/json 和 body: null。
   35. 示例 root URL 拼接需要统一，避免 https://host + v1/... 或双斜杠问题。
-  36. additional_bindings 文档已说明未生成，但 README feature list 不应暗示完整 HTTP transcoding。
+  36. ~~additional_bindings 文档已说明未生成，但 README feature list 不应暗示完整 HTTP transcoding。~~ 已闭环（2026-06-02）：docs/code-generation.md + docs/protobuf-annotations.md 已更新到 first-match-wins 行为描述。
   37. docs/protobuf-annotations.md 中 field behavior 示例仍是 name?: string，应改成当前 name: string | undefined。
   38. 补一个“已知限制”文档，列出 oneof、int64、runtime conversion、additional bindings 等。
 

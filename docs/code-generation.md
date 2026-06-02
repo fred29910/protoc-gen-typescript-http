@@ -299,5 +299,5 @@ message Message.NestedMessage → type name: Message_NestedMessage
 | **oneof as optional fields** | Oneof 字段被展开为多个 `?:` 可选字段，类型系统无法表达互斥 | 需调用方保证运行时互斥 |
 | **64-bit integer as number** | int64/uint64 映射为 `number`，超过 `2^53-1` 的值会丢失精度 | 建议调用方自行处理大整数 |
 | **No runtime conversion** | WKT 类型仅做类型声明，不做运行时值转换 | 调用方需按 JSON 规范传入正确格式 |
-| **additional_bindings** | 仅生成主 HTTP 绑定的 client 代码，`additional_bindings` 被解析但不生成实现 | 需要 alternative binding 时需手动实现 |
+| ~~**additional_bindings**~~ | ~~仅生成主 HTTP 绑定的 client 代码，`additional_bindings` 被解析但不生成实现~~ 自 2026-06-02 起：按 first-match-wins 语义为每个 binding 生成独立分支；无匹配时抛 `Error("no matching binding for <Method>")` | 与 Google API Gateway/Transcoding 默认行为一致 |
 | **No leading /** | 生成的 URL path 不包含前导 `/`（如 `v1/shippers`），需调用方自行拼接 root URL | 注意避免 `https://host + v1/...` 产生双斜杠 |
