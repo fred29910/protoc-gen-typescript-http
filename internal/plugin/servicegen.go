@@ -117,6 +117,11 @@ func (s serviceGenerator) generateMethod(f *codegen.File, method protoreflect.Me
 	}
 	rules := append([]httprule.Rule{rule}, rule.AdditionalRules...)
 	f.P(t(2), method.Name(), "(request) { // eslint-disable-line @typescript-eslint/no-unused-vars")
+	// Single-binding fast path: emit the body without an if/else/throw
+	// wrapper so the generated output for RPCs without additional_bindings
+	// stays byte-equivalent to the pre-Task-2 output. The two branches MUST
+	// stay in sync — any change to the multi-binding body below should be
+	// mirrored here, otherwise golden file diffs will appear for every RPC.
 	if len(rules) == 1 {
 		sub := rules[0]
 		input := method.Input()
