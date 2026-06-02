@@ -116,12 +116,25 @@ func (s serviceGenerator) generateMethod(f *codegen.File, method protoreflect.Me
 		return fmt.Errorf("parse http rule: %w", err)
 	}
 	rules := append([]httprule.Rule{rule}, rule.AdditionalRules...)
+	return s.writeMethodDispatchBody(f, method, rules)
+}
+
+// writeMethodDispatchBody writes the per-method TypeScript body, dispatching
+// across the parsed rules. The single-binding fast path emits the body
+// without an if/else/throw wrapper so the generated output for RPCs without
+// additional_bindings stays byte-equivalent to the pre-multi-binding output.
+// The two branches MUST stay in sync — any change to the multi-binding body
+// below should be mirrored here, otherwise golden file diffs will appear for
+// every RPC.
+//
+// Extracted from generateMethod so tests can drive it with pre-parsed rules
+// without needing to attach google.api.http annotations via protodesc.
+func (s serviceGenerator) writeMethodDispatchBody(
+	f *codegen.File,
+	method protoreflect.MethodDescriptor,
+	rules []httprule.Rule,
+) error {
 	f.P(t(2), method.Name(), "(request) { // eslint-disable-line @typescript-eslint/no-unused-vars")
-	// Single-binding fast path: emit the body without an if/else/throw
-	// wrapper so the generated output for RPCs without additional_bindings
-	// stays byte-equivalent to the pre-Task-2 output. The two branches MUST
-	// stay in sync — any change to the multi-binding body below should be
-	// mirrored here, otherwise golden file diffs will appear for every RPC.
 	if len(rules) == 1 {
 		sub := rules[0]
 		input := method.Input()
