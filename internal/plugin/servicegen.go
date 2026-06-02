@@ -107,7 +107,6 @@ func (s serviceGenerator) generateMethod(f *codegen.File, method protoreflect.Me
 	if !supportedMethod(method) {
 		return nil
 	}
-	outputType := typeFromMessage(s.pkg, method.Output())
 	r, ok := httprule.Get(method)
 	if !ok {
 		return nil
@@ -116,19 +115,75 @@ func (s serviceGenerator) generateMethod(f *codegen.File, method protoreflect.Me
 	if err != nil {
 		return fmt.Errorf("parse http rule: %w", err)
 	}
+	rules := append([]httprule.Rule{rule}, rule.AdditionalRules...)
 	f.P(t(2), method.Name(), "(request) { // eslint-disable-line @typescript-eslint/no-unused-vars")
-	if err := s.generateMethodPathValidation(f, method.Input(), rule); err != nil {
-		return fmt.Errorf("path validation: %w", err)
+	if len(rules) == 1 {
+		sub := rules[0]
+		input := method.Input()
+		if err := s.generateMethodBinding(f, input, sub); err != nil {
+			return fmt.Errorf("binding: %w", err)
+		}
+		if err := s.writeMethodHandlerCall(f, method, sub); err != nil {
+			return fmt.Errorf("handler: %w", err)
+		}
+	} else {
+		for i, sub := range rules {
+			input := method.Input()
+			cond, err := bindingPathVarsPresentExpr(sub, input)
+			if err != nil {
+				return fmt.Errorf("binding %d presence: %w", i, err)
+			}
+			if i == 0 {
+				f.P(t(3), "if (", cond, ") {")
+			} else {
+				f.P(t(3), "} else if (", cond, ") {")
+			}
+			if err := s.generateMethodBinding(f, input, sub); err != nil {
+				return fmt.Errorf("binding %d: %w", i, err)
+			}
+			if err := s.writeMethodHandlerCall(f, method, sub); err != nil {
+				return fmt.Errorf("binding %d handler: %w", i, err)
+			}
+		}
+		f.P(t(3), "} else {")
+		f.P(t(4), "throw new Error(", strconv.Quote("no matching binding for "+string(method.Name())), ");")
+		f.P(t(3), "}")
 	}
-	if err := s.generateMethodPath(f, method.Input(), rule); err != nil {
-		return fmt.Errorf("path: %w", err)
+	f.P(t(2), "},")
+	return nil
+}
+
+// bindingPathVarsPresentExpr returns a TS nullish AND-chain for the path
+// variables of the given rule. e.g. "request.id !== undefined && request.id !== null".
+// Returns "true" when the rule has no path variables.
+func bindingPathVarsPresentExpr(rule httprule.Rule, message protoreflect.MessageDescriptor) (string, error) {
+	var parts []string
+	for _, seg := range rule.Template.Segments {
+		if seg.Kind != httprule.SegmentKindVariable {
+			continue
+		}
+		np, err := nullPropagationPath(seg.Variable.FieldPath, message)
+		if err != nil {
+			return "", err
+		}
+		parts = append(parts, fmt.Sprintf("request.%s !== undefined && request.%s !== null", np, np))
 	}
-	if err := s.generateMethodBody(f, method.Input(), rule); err != nil {
-		return fmt.Errorf("body: %w", err)
+	if len(parts) == 0 {
+		return "true", nil
 	}
-	if err := s.generateMethodQuery(f, method.Input(), rule); err != nil {
-		return fmt.Errorf("query: %w", err)
-	}
+	return strings.Join(parts, " && "), nil
+}
+
+// writeMethodHandlerCall writes the `return handler({...}, {...})` block for
+// a single binding. The method body's `path`, `body`, and `queryParams`
+// variables must already be defined by generateMethodBinding in the current
+// scope.
+func (s serviceGenerator) writeMethodHandlerCall(
+	f *codegen.File,
+	method protoreflect.MethodDescriptor,
+	rule httprule.Rule,
+) error {
+	outputType := typeFromMessage(s.pkg, method.Output())
 	f.P(t(3), "let uri = path;")
 	f.P(t(3), "if (queryParams.length > 0) {")
 	f.P(t(4), "uri += `?${queryParams.join(\"&\")}`")
@@ -141,7 +196,6 @@ func (s serviceGenerator) generateMethod(f *codegen.File, method protoreflect.Me
 	f.P(t(4), "service: \"", method.Parent().Name(), "\",")
 	f.P(t(4), "method: \"", method.Name(), "\",")
 	f.P(t(3), "}) as Promise<", outputType.Reference(), ">;")
-	f.P(t(2), "},")
 	return nil
 }
 
