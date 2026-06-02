@@ -1,0 +1,23 @@
+syntax = "proto3";
+package einride.example.additional_bindings.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+message GetShipmentRequest {
+  // Path form 1: /v1/{parent}/shipments/{shipment}
+  string parent = 1;
+  // Path form 2: /v1/shipments/{shipment}
+  string shipment = 2;
+}
+
+service ShipmentService {
+  rpc GetShipment(GetShipmentRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get: "/v1/{parent}/shipments/{shipment}"
+      additional_bindings {
+        get: "/v1/shipments/{shipment}"
+      }
+    };
+  }
+}
