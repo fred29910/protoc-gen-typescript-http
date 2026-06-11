@@ -79,6 +79,30 @@ func (s serviceGenerator) generateClient(f *codegen.File) error {
 	return nil
 }
 
+// generateMethodBinding generates the per-binding TS body: path validation,
+// path construction, body construction, and query construction. It does NOT
+// write the `return handler(...)` line — the caller wraps each block in an
+// if-statement and decides where the return goes.
+func (s serviceGenerator) generateMethodBinding(
+	f *codegen.File,
+	input protoreflect.MessageDescriptor,
+	rule httprule.Rule,
+) error {
+	if err := s.generateMethodPathValidation(f, input, rule); err != nil {
+		return fmt.Errorf("path validation: %w", err)
+	}
+	if err := s.generateMethodPath(f, input, rule); err != nil {
+		return fmt.Errorf("path: %w", err)
+	}
+	if err := s.generateMethodBody(f, input, rule); err != nil {
+		return fmt.Errorf("body: %w", err)
+	}
+	if err := s.generateMethodQuery(f, input, rule); err != nil {
+		return fmt.Errorf("query: %w", err)
+	}
+	return nil
+}
+
 func (s serviceGenerator) generateMethod(f *codegen.File, method protoreflect.MethodDescriptor) error {
 	if !supportedMethod(method) {
 		return nil

@@ -163,6 +163,8 @@ const list = await client.ListShippers({ pageSize: 10 });
 | [代码生成](./docs/code-generation.md) | 详细的 TypeScript 代码生成参考 |
 | [Protobuf 注解](./docs/protobuf-annotations.md) | 如何为 .proto 文件添加 HTTP 规则注解 |
 | [开发指南](./docs/development.md) | 环境搭建、构建、测试和贡献 |
+| [示例](./docs/examples.md) | 示例 proto 定义及生成输出的完整演示 |
+| [CI/CD](./docs/ci-cd.md) | GitHub Actions 工作流与发布流程 |
 
 ## 开发
 
@@ -178,6 +180,8 @@ const list = await client.ListShippers({ pageSize: 10 });
 
 - `mage build` — 构建插件二进制文件到 `bin/` 目录
 - `mage test` — 运行单元测试
+- `mage vet` — 执行 `go vet`
+- `mage fmt` — 执行 `go fmt`
 - `mage integration` — 运行集成测试（构建插件，在 `examples/proto/gen/typescript/` 中生成代码，并通过 `git diff` 校验无变更）
 - `mage clean` — 清理构建产物
 
@@ -187,9 +191,12 @@ const list = await client.ListShippers({ pageSize: 10 });
 |---|---|
 | `make build` | 构建插件二进制文件 |
 | `make test` | 运行单元测试 |
+| `make vet` | 执行 `go vet` |
+| `make fmt` | 执行 `go fmt` |
 | `make integration` | 运行集成测试（自动安装 buf 和 mage） |
 | `make lint` | 使用 `buf lint` 检查 proto 文件 |
 | `make generate` | 构建插件并在 `examples/proto/gen/typescript/` 中重新生成 TypeScript |
+| `make ci` | 执行完整 CI 流水线（`vet` → `build` → `test` → `integration`） |
 | `make clean` | 清理所有构建产物 |
 
 ### 发布流程

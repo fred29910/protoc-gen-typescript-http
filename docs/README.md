@@ -12,6 +12,7 @@
 | [Protobuf Annotations](./protobuf-annotations.md) | 使用 HTTP 规则和字段行为注解 .proto 文件的指南 |
 | [Development](./development.md) | 环境搭建、构建、测试和贡献指南 |
 | [Examples](./examples.md) | 示例 proto 定义及生成输出的完整演示 |
+| [CI/CD](./ci-cd.md) | GitHub Actions 工作流与发布流程说明 |
 
 ## 快速链接
 
