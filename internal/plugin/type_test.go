@@ -132,8 +132,9 @@ func Test_typeFromField_repeatedAndMap(t *testing.T) {
 	})
 
 	// map<string, string> field — map entry must be declared in the same scope
+	// and entry name must be <FieldName>Entry (protoc rule)
 	mapEntry := &descriptorpb.DescriptorProto{
-		Name: strPtr("StringMapEntry"),
+		Name: strPtr("LabelsEntry"),
 		Options: &descriptorpb.MessageOptions{MapEntry: boolPtr(true)},
 		Field: []*descriptorpb.FieldDescriptorProto{
 			{Name: strPtr("key"), Number: int32Ptr(1), Type: fieldType(descriptorpb.FieldDescriptorProto_TYPE_STRING), JsonName: strPtr("key")},
@@ -145,7 +146,7 @@ func Test_typeFromField_repeatedAndMap(t *testing.T) {
 		Number:   int32Ptr(1),
 		Label:    descriptorpb.FieldDescriptorProto_LABEL_REPEATED.Enum(),
 		Type:     fieldType(descriptorpb.FieldDescriptorProto_TYPE_MESSAGE),
-		TypeName: strPtr(".typetest.TestMessage.StringMapEntry"),
+		TypeName: strPtr(".typetest.TestMessage.LabelsEntry"),
 		JsonName: strPtr("labels"),
 	}
 	fd2 := &descriptorpb.FileDescriptorProto{
@@ -188,6 +189,7 @@ func Test_typeFromField_messageAndEnum(t *testing.T) {
 				Name: strPtr("TestMessage"),
 				Field: []*descriptorpb.FieldDescriptorProto{
 					{Name: strPtr("inner"), Number: int32Ptr(1), Type: fieldType(descriptorpb.FieldDescriptorProto_TYPE_MESSAGE), TypeName: strPtr(".typetest.Inner"), JsonName: strPtr("inner")},
+					{Name: strPtr("status"), Number: int32Ptr(2), Type: fieldType(descriptorpb.FieldDescriptorProto_TYPE_ENUM), TypeName: strPtr(".typetest.Status"), JsonName: strPtr("status")},
 				},
 			},
 		},
@@ -205,13 +207,13 @@ func Test_typeFromField_messageAndEnum(t *testing.T) {
 	t.Run("message field references scoped type name", func(t *testing.T) {
 		t.Parallel()
 		got := typeFromFieldFromProto(t, fd, "inner")
-		assert.Equal(t, "typetest_Inner", got.Reference())
+		assert.Equal(t, "Inner", got.Reference())
 	})
 
 	t.Run("enum field references scoped type name", func(t *testing.T) {
 		t.Parallel()
 		got := typeFromFieldFromProto(t, fd, "status")
-		assert.Equal(t, "typetest_Status", got.Reference())
+		assert.Equal(t, "Status", got.Reference())
 	})
 }
 
