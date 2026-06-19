@@ -76,12 +76,12 @@
 | 文件 | 用途 |
 |------|---------|
 | `generate.go` | 入口点，构建 registry，按 package 对文件进行分组，并协调生成过程 |
-| `packagegen.go` | Package 级别的生成器，遍历 descriptor 并分发给专门的生成器；遇到 WKT 时优先输出 `TypeDeclaration()` |
-| `messagegen.go` | 为 protobuf message 生成 TypeScript 类型别名 |
+|| `packagegen.go` | Package 级别的生成器，遍历 descriptor 并分发给专门的生成器；遇到 WKT 时优先输出 `TypeDeclaration()`；header 输出 `eslint-disable camelcase` + `encode` 工具函数（无 `@ts-nocheck`） |
+| `messagegen.go` | 为 protobuf message 生成 TypeScript 类型别名；含 oneof 的消息生成判别联合（`{ $case: "jsonName"; jsonName: Type }`），否则生成普通 struct |
 | `enumgen.go` | 为 protobuf enum 生成 TypeScript 联合类型 |
 | `servicegen.go` | 生成 service 接口、request handler 类型以及 client 实现 |
 | `commentgen.go` | 提取并输出 protobuf 源码注释和 field behavior 注解 |
-| `type.go` | 将 protobuf 字段类型映射为 TypeScript 类型（scalar、enum、message、map、list） |
+| `type.go` | 将 protobuf 字段类型映射为 TypeScript 类型（scalar、enum、message、map、list）；`typeFromField`/`namedTypeFromField` 返回 `(Type, error)` 拒绝未知类型 |
 | `wellknown.go` | 识别 Google Well-Known Types，并为每个 WKT 输出 TypeScript 类型声明（含 JSON 编码注释） |
 | `jsonleafwalk.go` | 递归遍历 message 字段以发现 query-parameter 候选字段（带 cycle detection） |
 | `helpers.go` | 用于类型命名（跨包前缀、嵌套扁平化）、字段迭代、缩进的辅助函数 |
