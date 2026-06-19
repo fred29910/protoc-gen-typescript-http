@@ -1,6 +1,10 @@
 package plugin
 
-import "google.golang.org/protobuf/reflect/protoreflect"
+import (
+	"fmt"
+
+	"google.golang.org/protobuf/reflect/protoreflect"
+)
 
 type Type struct {
 	IsNamed bool
@@ -22,61 +26,70 @@ func (t Type) Reference() string {
 	}
 }
 
-func typeFromField(pkg protoreflect.FullName, field protoreflect.FieldDescriptor) Type {
+func typeFromField(pkg protoreflect.FullName, field protoreflect.FieldDescriptor) (Type, error) {
 	switch {
 	case field.IsMap():
-		underlying := namedTypeFromField(pkg, field.MapValue())
+		underlying, err := namedTypeFromField(pkg, field.MapValue())
+		if err != nil {
+			return Type{}, err
+		}
 		return Type{
 			IsMap:      true,
 			Underlying: &underlying,
-		}
+		}, nil
 	case field.IsList():
-		underlying := namedTypeFromField(pkg, field)
+		underlying, err := namedTypeFromField(pkg, field)
+		if err != nil {
+			return Type{}, err
+		}
 		return Type{
 			IsList:     true,
 			Underlying: &underlying,
-		}
+		}, nil
 	default:
 		return namedTypeFromField(pkg, field)
 	}
 }
 
-func namedTypeFromField(pkg protoreflect.FullName, field protoreflect.FieldDescriptor) Type {
+func namedTypeFromField(pkg protoreflect.FullName, field protoreflect.FieldDescriptor) (Type, error) {
 	switch field.Kind() {
 	case protoreflect.StringKind, protoreflect.BytesKind:
-		return Type{IsNamed: true, Name: "string"}
+		return Type{IsNamed: true, Name: "string"}, nil
 	case protoreflect.BoolKind:
-		return Type{IsNamed: true, Name: "boolean"}
+		return Type{IsNamed: true, Name: "boolean"}, nil
 	case
 		protoreflect.Int32Kind,
-		protoreflect.Int64Kind,
 		protoreflect.Uint32Kind,
-		protoreflect.Uint64Kind,
 		protoreflect.DoubleKind,
 		protoreflect.Fixed32Kind,
-		protoreflect.Fixed64Kind,
 		protoreflect.Sfixed32Kind,
-		protoreflect.Sfixed64Kind,
-		protoreflect.Sint32Kind,
-		protoreflect.Sint64Kind,
 		protoreflect.FloatKind:
-		return Type{IsNamed: true, Name: "number"}
+		return Type{IsNamed: true, Name: "number"}, nil
+	case
+		protoreflect.Int64Kind,
+		protoreflect.Uint64Kind,
+		protoreflect.Fixed64Kind,
+		protoreflect.Sfixed64Kind,
+		protoreflect.Sint64Kind:
+		// 64-bit integers map to string to avoid precision loss beyond Number.MAX_SAFE_INTEGER.
+		// Per Protobuf JSON specification, int64/uint64 values should be encoded as strings.
+		return Type{IsNamed: true, Name: "string"}, nil
 	case protoreflect.MessageKind:
 		return typeFromMessage(pkg, field.Message())
 	case protoreflect.EnumKind:
 		desc := field.Enum()
 		if wkt, ok := WellKnownType(field.Enum()); ok {
-			return Type{IsNamed: true, Name: wkt.Name()}
+			return Type{IsNamed: true, Name: wkt.Name()}, nil
 		}
-		return Type{IsNamed: true, Name: scopedDescriptorTypeName(pkg, desc)}
+		return Type{IsNamed: true, Name: scopedDescriptorTypeName(pkg, desc)}, nil
 	default:
-		return Type{IsNamed: true, Name: "unknown"}
+		return Type{}, fmt.Errorf("unsupported field kind %v for field %s in message %s", field.Kind(), field.Name(), field.ContainingMessage().FullName())
 	}
 }
 
-func typeFromMessage(pkg protoreflect.FullName, message protoreflect.MessageDescriptor) Type {
+func typeFromMessage(pkg protoreflect.FullName, message protoreflect.MessageDescriptor) (Type, error) {
 	if wkt, ok := WellKnownType(message); ok {
-		return Type{IsNamed: true, Name: wkt.Name()}
+		return Type{IsNamed: true, Name: wkt.Name()}, nil
 	}
-	return Type{IsNamed: true, Name: scopedDescriptorTypeName(pkg, message)}
+	return Type{IsNamed: true, Name: scopedDescriptorTypeName(pkg, message)}, nil
 }

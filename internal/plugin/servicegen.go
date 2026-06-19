@@ -32,8 +32,14 @@ func (s serviceGenerator) generateInterface(f *codegen.File) {
 			return
 		}
 		commentGenerator{descriptor: method}.generateLeading(f, 1)
-		input := typeFromMessage(s.pkg, method.Input())
-		output := typeFromMessage(s.pkg, method.Output())
+		input, err := typeFromMessage(s.pkg, method.Input())
+		if err != nil {
+			panic(fmt.Errorf("service interface input %s: %w", method.Input().FullName(), err))
+		}
+		output, err := typeFromMessage(s.pkg, method.Output())
+		if err != nil {
+			panic(fmt.Errorf("service interface output %s: %w", method.Output().FullName(), err))
+		}
 		f.P(t(1), method.Name(), "(request: ", input.Reference(), "): Promise<", output.Reference(), ">;")
 	})
 	f.P("}")
@@ -41,13 +47,13 @@ func (s serviceGenerator) generateInterface(f *codegen.File) {
 }
 
 func (s serviceGenerator) generateHandler(f *codegen.File) {
-	f.P("type RequestType = {")
+	f.P("export type RequestType = {")
 	f.P(t(1), "path: string;")
 	f.P(t(1), "method: string;")
 	f.P(t(1), "body: string | null;")
 	f.P("};")
 	f.P()
-	f.P("type RequestHandler = (request: RequestType, meta: { service: string, method: string }) => Promise<unknown>;")
+	f.P("export type RequestHandler = (request: RequestType, meta: { service: string, method: string }) => Promise<unknown>;")
 	f.P()
 }
 
@@ -201,7 +207,10 @@ func (s serviceGenerator) writeMethodHandlerCall(
 	method protoreflect.MethodDescriptor,
 	rule httprule.Rule,
 ) error {
-	outputType := typeFromMessage(s.pkg, method.Output())
+	outputType, err := typeFromMessage(s.pkg, method.Output())
+	if err != nil {
+		panic(fmt.Errorf("service method output %s: %w", method.Output().FullName(), err))
+	}
 	f.P(t(3), "let uri = path;")
 	f.P(t(3), "if (queryParams.length > 0) {")
 	f.P(t(4), "uri += `?${queryParams.join(\"&\")}`")
@@ -253,16 +262,16 @@ func (s serviceGenerator) generateMethodPath(
 			if err != nil {
 				return fmt.Errorf("method path json path: %w", err)
 			}
-			if isWildcardVariable(seg) {
-				// Preserve structural slashes — split, encode each segment, join
-				// e.g., request.name.split('/').map(p => encodeURIComponent(p)).join('/')
-				pathParts = append(pathParts,
-					"${request."+fieldPath+".split('/').map(p => encodeURIComponent(p)).join('/')}")
-			} else {
-				// Standard variable — full encodeURIComponent
-				pathParts = append(pathParts,
-					"${encodeURIComponent(request."+fieldPath+")}")
-			}
+				if isWildcardVariable(seg) {
+					// Preserve structural slashes — split, encode each segment, join
+					// e.g., request.name.split('/').map(p => encode(p)).join('/')
+					pathParts = append(pathParts,
+						"${request."+fieldPath+".split('/').map(p => encode(p)).join('/')}")
+				} else {
+					// Standard variable — full encode
+					pathParts = append(pathParts,
+						"${encode(request."+fieldPath+")}")
+				}
 		case httprule.SegmentKindLiteral:
 			pathParts = append(pathParts, seg.Literal)
 		case httprule.SegmentKindMatchSingle: // TODO: Double check this and following case
@@ -346,15 +355,15 @@ func (s serviceGenerator) generateMethodQuery(
 		switch {
 		case field.IsList():
 			f.P(t(4), "request.", jp, ".forEach((x) => {")
-			f.P(t(5), "queryParams.push(`", jp, "=${encodeURIComponent(x.toString())}`)")
-			f.P(t(4), "})")
-		case field.IsMap():
-			f.P(t(4), "Object.keys(request.", jp, ").sort().forEach((key) => {")
-			f.P(t(5), "const value = request.", jp, "[key];")
-			f.P(t(5), "queryParams.push(`", jp, "[${encodeURIComponent(key)}]=${encodeURIComponent(value.toString())}`)")
-			f.P(t(4), "})")
-		default:
-			f.P(t(4), "queryParams.push(`", jp, "=${encodeURIComponent(request.", jp, ".toString())}`)")
+			f.P(t(4), "queryParams.push(`", jp, "=${encode(x.toString())}`)")
+				f.P(t(4), "})")
+			case field.IsMap():
+				f.P(t(4), "Object.keys(request.", jp, ").sort().forEach((key) => {")
+				f.P(t(5), "const value = request.", jp, "[key];")
+				f.P(t(5), "queryParams.push(`", jp, "[${encode(key)}]=${encode(value.toString())}`)")
+				f.P(t(4), "})")
+			default:
+				f.P(t(4), "queryParams.push(`", jp, "=${encode(request.", jp, ".toString())}`)")
 		}
 		f.P(t(3), "}")
 	})

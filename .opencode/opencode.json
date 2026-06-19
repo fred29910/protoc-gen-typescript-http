@@ -11,10 +11,17 @@
     "build": {
       "mode": "primary",
       "model": "opencode/minimax-m3-free",
-       "reasoningEffort": "high"
+      "prompt": "你是主开发代理。你必须深刻理解 'subagent-driven-development' 技能的理念。遇到需要 TDD开发、复杂Debug 或 代码审查 的任务时，严禁自己直接执行，必须使用 @ 语法唤醒内置子代理（@general, @explore, @scout）来处理，以保持上下文隔离。",
+      "reasoningEffort": "high"
+    },
+    "general": {
+      "prompt": "你是通用攻坚子代理。当父代理唤醒你进行测试开发时，必须严格应用 'test-driven-development' (TDD) 技能；当唤醒你排查问题时，必须严格应用 'systematic-debugging' (系统化调试四步法) 技能。任务完成后向父代理简明汇报。",
+      "model": "opencode/mimo-v2.5-free",
+      "reasoningEffort": "high"
     },
     "explore": {
-      "model": "opencode/deepseek-v4-flash-free"
+      "model": "opencode/deepseek-v4-flash-free",
+      "prompt": "你是只读的代码探索与审查代理。当父代理唤醒你进行审查时，必须严格应用 'requesting-code-review' 和 'chinese-code-review' 技能。客观、严厉地指出安全漏洞、性能问题和逻辑缺陷，无需修改代码，只需给出报告。"
     },
     "scout": {
       "model": "opencode/big-pickle"
